@@ -1,0 +1,15 @@
+{
+  "name": "Copy of IPS - Análisis Estratégico de Vacantes",
+  "description": "Sistema corporativo de monitoreo de fuerza laboral y vacantes. Despliegue en Infraestructura Firebase.",
+  "requestFramePermissions": [],
+  "firebase": {
+    "hosting": {
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  }
+}
