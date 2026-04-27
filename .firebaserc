@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "prior-01": {
+      "hosting": {
+        "ipsvac": [
+          "vacips"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

@@ -1,0 +1,341 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ═══════════════════════════════════════════════════
+   IPS v9.0.0 — Dark Executive Theme
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  --ips-bg: #0A0F1E;
+  --ips-card: #111827;
+  --ips-border: rgba(30, 58, 95, 0.35);
+  --ips-blue: #2563EB;
+  --ips-blue-glow: rgba(37, 99, 235, 0.4);
+  --ips-green: #10B981;
+  --ips-red: #EF4444;
+  --ips-amber: #F59E0B;
+  --ips-text: #e2e8f0;
+  --ips-text-muted: #64748b;
+  --ips-radius-card: 16px;
+  --ips-radius-card-lg: 24px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--ips-bg);
+  color: var(--ips-text);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: contain;
+}
+
+/* ───────── Tipografía técnica para datos ───────── */
+.font-mono-data {
+  font-family: 'IBM Plex Mono', 'Menlo', monospace;
+}
+
+/* ───────── Custom Scrollbar (Dark) ───────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ═══════════════════════════════════════════════════
+   ANIMACIONES
+   ═══════════════════════════════════════════════════ */
+
+/* Conteo animado desde 0 */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ips-count-up {
+  animation: countUp 0.6s ease-out;
+}
+
+/* Pulse suave para semáforo */
+@keyframes semaforoPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 15px currentColor; }
+  50% { opacity: 0.7; box-shadow: 0 0 25px currentColor; }
+}
+
+.ips-semaforo-pulse {
+  animation: semaforoPulse 2s ease-in-out infinite;
+}
+
+/* Parpadeo para valores críticos */
+@keyframes criticalBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.ips-critical-blink {
+  animation: criticalBlink 1.5s ease-in-out infinite;
+}
+
+/* Punto verde auditado animado */
+@keyframes auditPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  50% { 
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+}
+
+.ips-audit-dot {
+  animation: auditPulse 2s ease-in-out infinite;
+}
+
+/* Slide In desde abajo */
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ips-slide-in {
+  animation: slideInUp 0.4s ease-out;
+}
+
+/* Card Fade In staggered */
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ips-card-animate {
+  animation: cardFadeIn 0.5s ease-out both;
+}
+
+.ips-card-animate:nth-child(1) { animation-delay: 0.05s; }
+.ips-card-animate:nth-child(2) { animation-delay: 0.1s; }
+.ips-card-animate:nth-child(3) { animation-delay: 0.15s; }
+.ips-card-animate:nth-child(4) { animation-delay: 0.2s; }
+.ips-card-animate:nth-child(5) { animation-delay: 0.25s; }
+.ips-card-animate:nth-child(6) { animation-delay: 0.3s; }
+
+/* ═══════════════════════════════════════════════════
+   BOTTOM NAVBAR
+   ═══════════════════════════════════════════════════ */
+
+.ips-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(10, 15, 30, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--ips-border);
+  padding-bottom: var(--safe-area-bottom);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.ips-bottom-nav-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 6px 8px 8px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.ips-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  border: none;
+  background: transparent;
+  color: var(--ips-text-muted);
+  min-height: 56px;
+  min-width: 44px;
+}
+
+.ips-nav-item:active {
+  transform: scale(0.92);
+}
+
+.ips-nav-item.active {
+  color: var(--ips-blue);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.ips-nav-item svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+}
+
+.ips-nav-item span {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════
+   DARK CARDS MÉTRICAS (MÓVIL)
+   ═══════════════════════════════════════════════════ */
+
+.ips-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .ips-metric-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .ips-metric-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 24px;
+  }
+}
+
+.ips-metric-card {
+  background: var(--ips-card);
+  border: 1px solid var(--ips-border);
+  border-radius: var(--ips-radius-card);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .ips-metric-card {
+    padding: 20px;
+    border-radius: var(--ips-radius-card-lg);
+    min-height: 160px;
+  }
+}
+
+.ips-metric-card:hover {
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.ips-metric-card--semaforo {
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════
+   HEADER MÓVIL COMPACTO
+   ═══════════════════════════════════════════════════ */
+
+.ips-header {
+  background: rgba(10, 15, 30, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--ips-border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE UTILITIES
+   ═══════════════════════════════════════════════════ */
+
+/* Safe padding para bottom nav */
+.pb-safe-nav {
+  padding-bottom: calc(80px + var(--safe-area-bottom));
+}
+
+/* Touch targets mínimos */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+input[type="number"],
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+textarea,
+select {
+  font-size: 16px; /* Prevenir zoom en iOS */
+}
+
+/* ═══════════════════════════════════════════════════
+   PRINT STYLES
+   ═══════════════════════════════════════════════════ */
+
+@media print {
+  body {
+    background: white;
+    color: #1a1a1a;
+  }
+  .ips-bottom-nav,
+  .ips-header,
+  .print\\:hidden {
+    display: none !important;
+  }
+  .print\\:m-0 {
+    margin: 0 !important;
+  }
+  .print\\:max-w-none {
+    max-width: none !important;
+  }
+  .print\\:rounded-none {
+    border-radius: 0 !important;
+  }
+}

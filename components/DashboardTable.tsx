@@ -1,13 +1,14 @@
 
 import React, { useState, memo } from 'react';
-import { Region, UNE, WeeklyData, NationalMetrics, ComputedData } from '../types';
+import { Region, UNE, WeeklyData, NationalMetrics } from '../types';
 import { computeEntryData, formatNumber } from '../utils/calculations';
 
+// Componente de celda blindada para evitar re-renders innecesarios
 const EditableCell = memo(({ value, onChange, colorClass = "text-slate-900", bgColor = "bg-blue-50/5", highlight = false, userRole, isLarge = false }: any) => {
   if (userRole === 'viewer') {
     return (
-      <td className={`px-2 py-2 border-r border-slate-100 text-center ${bgColor} ${highlight ? 'bg-blue-50/60' : ''}`}>
-        <span className={`font-black ${isLarge ? 'text-xl' : 'text-base'} ${colorClass}`}>{formatNumber(value)}</span>
+      <td className={`px-1 py-1 border-r border-slate-100 text-center ${bgColor} ${highlight ? 'bg-blue-50/60' : ''}`}>
+        <span className={`font-black ${isLarge ? 'text-2xl' : 'text-lg'} ${colorClass}`}>{formatNumber(value)}</span>
       </td>
     );
   }
@@ -16,8 +17,7 @@ const EditableCell = memo(({ value, onChange, colorClass = "text-slate-900", bgC
     <td className={`px-1 py-1 border-r border-slate-100 ${bgColor} ${highlight ? 'bg-blue-50/60 ring-1 ring-inset ring-blue-100' : ''}`}>
       <input
         type="number"
-        inputMode="numeric"
-        className={`w-full bg-transparent border-none text-center font-black ${isLarge ? 'text-xl md:text-2xl' : 'text-base md:text-lg'} rounded-lg p-2 ${colorClass} outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all`}
+        className={`w-full bg-transparent border-none text-center font-black ${isLarge ? 'text-2xl' : 'text-lg'} rounded-lg p-1 ${colorClass} outline-none focus:bg-white focus:ring-2 focus:ring-blue-400 transition-all`}
         value={value}
         onFocus={(e) => e.target.select()}
         onChange={e => onChange(Number(e.target.value))}
@@ -29,51 +29,50 @@ const EditableCell = memo(({ value, onChange, colorClass = "text-slate-900", bgC
 const DiffCell = ({ current, prev, inverse = false }: { current: number, prev: number, inverse?: boolean }) => {
   const diff = inverse ? prev - current : current - prev;
   let colorClass = "text-slate-400";
-  if (diff > 0) colorClass = "text-emerald-600 font-black";
-  if (diff < 0) colorClass = "text-rose-600 font-black";
+  if (diff > 0) colorClass = "text-emerald-600";
+  if (diff < 0) colorClass = "text-rose-600";
+
   return (
-    <td className={`px-2 py-4 text-center border-r border-slate-100 font-bold tabular-nums text-sm md:text-lg ${colorClass}`}>
+    <td className={`px-2 py-3 text-center border-r border-slate-100 font-black tabular-nums text-xl ${colorClass}`} title={`Diferencia: ${diff > 0 ? '+' : ''}${formatNumber(diff)}`}>
       {diff > 0 ? `+${formatNumber(diff)}` : formatNumber(diff)}
     </td>
   );
 };
 
-const TableRow = memo(({ une, curr, prev, status, handleInlineChange, userRole }: any) => {
+// Blindaje de fila: Solo re-renderiza si sus datos específicos cambian
+const TableRow = memo(({ une, curr, prev, status, handleInlineChange, userRole, prevWeekNum, viewMode }: any) => {
+  const isPresentation = viewMode === 'presentation';
   return (
-    <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 group">
-      <td className="sticky left-0 z-10 px-4 py-4 font-black text-slate-800 border-r border-slate-100 text-[11px] md:text-[14px] bg-white group-hover:bg-slate-50 shadow-[4px_0_12px_rgba(0,0,0,0.05)] min-w-[140px] md:min-w-[180px] truncate">{une.name}</td>
-      <td className="px-2 text-center border-r text-xs md:text-[16px] font-bold text-slate-400 bg-slate-50/30">{formatNumber(prev?.edoFza || 0)}</td>
+    <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0" title={`Datos de ${une.name}`}>
+      <td className={`sticky left-0 z-10 bg-white px-3 md:px-4 py-3 md:py-2 font-black text-slate-800 border-r border-slate-50 ${isPresentation ? 'text-lg md:text-3xl py-4' : 'text-xs md:text-base'}`}>{une.name}</td>
+      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.edoFza || 0)}`}>{formatNumber(prev?.edoFza || 0)}</td>
       <EditableCell value={curr?.edoFza || 0} onChange={(v: number) => handleInlineChange(une.id, 'edoFza', v)} userRole={userRole} highlight={true} isLarge={true} />
       <DiffCell current={curr?.edoFza || 0} prev={prev?.edoFza || 0} />
-      <td className="px-2 text-center border-r text-xs md:text-[16px] font-bold text-slate-400 bg-slate-50/30">{formatNumber(prev?.altas || 0)}</td>
+      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.altas || 0)}`}>{formatNumber(prev?.altas || 0)}</td>
       <EditableCell value={curr?.altas || 0} onChange={(v: number) => handleInlineChange(une.id, 'altas', v)} colorClass="text-emerald-600" bgColor="bg-emerald-50/20" userRole={userRole} highlight={true} isLarge={true} />
       <DiffCell current={curr?.altas || 0} prev={prev?.altas || 0} />
-      <td className="px-2 text-center border-r text-xs md:text-[16px] font-bold text-slate-400 bg-slate-50/30">{formatNumber(prev?.bajas || 0)}</td>
+      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.bajas || 0)}`}>{formatNumber(prev?.bajas || 0)}</td>
       <EditableCell value={curr?.bajas || 0} onChange={(v: number) => handleInlineChange(une.id, 'bajas', v)} colorClass="text-rose-600" bgColor="bg-rose-50/20" userRole={userRole} highlight={true} isLarge={true} />
       <DiffCell current={curr?.bajas || 0} prev={prev?.bajas || 0} inverse={true} />
-      <td className="px-2 text-center border-r text-xs md:text-[16px] font-bold text-slate-400 bg-slate-50/30">{formatNumber(prev?.vacantesIniciales || 0)}</td>
+      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.vacantesRealesFS || 0)}`}>{formatNumber(prev?.vacantesRealesFS || 0)}</td>
       <EditableCell value={curr?.vacantesIniciales || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesIniciales', v)} userRole={userRole} highlight={true} isLarge={true} />
-      <DiffCell current={curr?.vacantesIniciales || 0} prev={prev?.vacantesIniciales || 0} inverse={true} />
-      <EditableCell value={curr?.vacantesRealesFS || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesRealesFS', v)} colorClass="text-blue-800" highlight={true} userRole={userRole} isLarge={true} bgColor="bg-blue-100/20" />
-      <td className="px-2 py-4 text-center border-r border-slate-100">
-        <div className="flex flex-col items-center gap-1">
-          <span className={`inline-block px-2 py-1 rounded-lg text-[10px] md:text-[12px] font-black text-white shadow-sm ${status.bg}`}>
-            {curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%
-          </span>
-          <span className={`text-[8px] font-black uppercase tracking-tighter ${status.bg.replace('bg-', 'text-')}`}>
-            {status.bg.includes('emerald') ? 'SALUDABLE' : status.bg.includes('amber') ? 'EN ATENCIÓN' : 'CRÍTICO'}
-          </span>
-        </div>
+      <DiffCell current={curr?.vacantesIniciales || 0} prev={prev?.vacantesRealesFS || 0} inverse={true} />
+      <EditableCell value={curr?.vacantesRealesFS || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesRealesFS', v)} colorClass="text-blue-800" highlight={true} userRole={userRole} isLarge={true} bgColor="bg-blue-100/10" />
+      <td className="px-1 py-2 text-center border-r border-slate-50">
+        <span className={`inline-block px-3 py-1.5 rounded-lg text-xs font-black text-white shadow-sm ${status.bg}`} title={`Porcentaje de Vacantes: ${curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%`}>
+          {curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%
+        </span>
       </td>
-      <td className="px-4 py-2 min-w-[250px]">
-        {userRole !== 'viewer' && (
+      <td className="px-4 py-2 text-[10px] text-slate-600 italic font-bold">
+        {userRole !== 'viewer' ? (
           <textarea
-            className="w-full bg-slate-50/50 border border-slate-200/50 rounded-xl p-3 outline-none text-[10px] font-bold focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
-            rows={1}
-            placeholder="Comentarios tácticos..."
+            className={`w-full bg-transparent border-none resize-none p-1 outline-none font-bold ${isPresentation ? 'text-sm' : 'text-[10px]'}`}
+            rows={isPresentation ? 2 : 1}
             value={curr?.comentarios || ''}
             onChange={e => handleInlineChange(une.id, 'comentarios', e.target.value)}
           />
+        ) : (
+          <span className={`block p-1 whitespace-pre-wrap ${isPresentation ? 'text-sm' : 'text-[10px]'}`}>{curr?.comentarios || ''}</span>
         )}
       </td>
     </tr>
@@ -90,12 +89,15 @@ interface DashboardTableProps {
   isOpen: boolean;
   onToggle: () => void;
   nationalMetrics: NationalMetrics;
-  userRole: string;
   onUpdateRegion: (id: string, name: string, editor: string) => void;
   onEditUne: (uneId: string) => void;
+  userRole: string;
+  viewMode?: 'normal' | 'minimal' | 'presentation';
 }
 
-const DashboardTable: React.FC<DashboardTableProps> = ({ region, unes, allData, selectedWeek, selectedYear, isOpen, onToggle, nationalMetrics, userRole, onUpdateRegion, onUpdateData }) => {
+const DashboardTable: React.FC<DashboardTableProps> = ({
+  region, unes, allData, selectedWeek, selectedYear, isOpen, onToggle, nationalMetrics, userRole, onUpdateRegion, onUpdateData, viewMode = 'normal'
+}) => {
   const [isEditingHeader, setIsEditingHeader] = useState(false);
   const [localRegion, setLocalRegion] = useState({ name: region.name, editor: region.editor });
 
@@ -126,7 +128,7 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ region, unes, allData, 
       currEdo: acc.currEdo + curr.edoFza, prevEdo: acc.prevEdo + prev.edoFza,
       currAltas: acc.currAltas + curr.altas, prevAltas: acc.prevAltas + prev.altas,
       currBajas: acc.currBajas + curr.bajas, prevBajas: acc.prevBajas + prev.bajas,
-      currVac: acc.currVac + curr.vacantesIniciales, prevVac: acc.prevVac + prev.vacantesIniciales,
+      currVac: acc.currVac + curr.vacantesIniciales, prevVac: acc.prevVac + prev.vacantesRealesFS,
       realesFS: acc.realesFS + curr.vacantesRealesFS,
     };
   }, { currEdo: 0, prevEdo: 0, currAltas: 0, prevAltas: 0, currBajas: 0, prevBajas: 0, currVac: 0, prevVac: 0, realesFS: 0 });
@@ -143,7 +145,7 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ region, unes, allData, 
 
   return (
     <div className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden transition-all hover:shadow-lg">
-      <div className={`p-5 md:p-8 flex flex-col md:flex-row justify-between items-center gap-4 cursor-pointer transition-all ${isOpen ? 'bg-slate-50 border-b border-slate-200' : 'bg-white hover:bg-slate-50'}`} onClick={onToggle}>
+      <div className={`p-3 md:p-8 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4 cursor-pointer transition-all ${isOpen ? 'bg-slate-50 border-b border-slate-200' : 'bg-white hover:bg-slate-50'}`} onClick={onToggle}>
         <div className="flex items-center gap-5 w-full md:w-auto">
           <div className={`p-3 rounded-xl transition-all shadow-sm ${isOpen ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
             <svg className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M9 5l7 7-7 7" /></svg>
@@ -176,11 +178,8 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ region, unes, allData, 
               </div>
             )}
           </div>
-          <div className="md:hidden text-right">
-            <span className={`text-2xl font-black ${getStatusColor(totalPerc).split(' ')[0]}`}>{totalPerc.toFixed(1)}%</span>
-          </div>
         </div>
-        <div className="hidden md:block text-right">
+        <div className="text-right">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">% VACANTES REGIONAL</span>
           <span className={`text-4xl font-black tabular-nums tracking-tighter ${getStatusColor(totalPerc).split(' ')[0]}`}>{totalPerc.toFixed(1)}%</span>
         </div>
@@ -188,41 +187,63 @@ const DashboardTable: React.FC<DashboardTableProps> = ({ region, unes, allData, 
 
       {isOpen && (
         <div className="overflow-x-auto relative scrollbar-hide border-t border-slate-100">
-          <table className="w-full text-left border-collapse min-w-[1400px]">
+          <table className="w-full text-left border-collapse min-w-[1200px]">
             <thead>
-              <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em]">
-                <th className="sticky left-0 z-20 w-[200px] px-6 py-7 bg-slate-800 text-left border-r border-white/5">UNIDAD DE NEGOCIO</th>
-                <th colSpan={3} className="px-2 py-4 text-center border-r border-white/5">ESTADO DE FUERZA</th>
-                <th colSpan={3} className="px-2 py-4 text-center border-r border-white/5 bg-emerald-900/40 text-emerald-400">FLUJO DE ALTAS</th>
-                <th colSpan={3} className="px-2 py-4 text-center border-r border-white/5 bg-rose-900/40 text-rose-400">FLUJO DE BAJAS</th>
-                <th colSpan={3} className="px-2 py-4 text-center border-r border-white/5 bg-blue-900/40 text-blue-400">REPORTE VACANTES</th>
-                <th className="px-2 py-4 text-center bg-blue-600 text-white">REALES FS</th>
-                <th className="px-4 py-4 text-center">% KP</th>
-                <th className="px-5 py-4 text-left">OBSERVACIONES</th>
+              <tr className="bg-slate-900 text-white text-xs md:text-sm font-black uppercase tracking-[0.2em]">
+                <th rowSpan={2} className="sticky left-0 z-20 w-[140px] md:w-[220px] px-3 md:px-6 py-4 bg-slate-800 text-left border-r border-white/5 align-middle text-[10px] md:text-sm">UNIDAD DE NEGOCIO</th>
+                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-slate-800/50">ESTADO DE FUERZA</th>
+                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-emerald-900/40 text-emerald-400">FLUJO DE ALTAS</th>
+                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-rose-900/40 text-rose-400">FLUJO DE BAJAS</th>
+                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-blue-900/40 text-blue-400">VACANTES</th>
+                <th rowSpan={2} className="px-1 py-3 text-center text-blue-800 bg-blue-50/50 min-w-[110px] align-middle text-xs">VACANTES<br />OPERATIVAS</th>
+                <th rowSpan={2} className="px-4 py-4 text-center align-middle text-sm">% KP</th>
+                <th rowSpan={2} className="px-5 py-4 text-left align-middle text-sm">OBSERVACIONES</th>
+              </tr>
+              <tr className="bg-slate-800/80 text-slate-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
+                <th className="px-2 py-2 text-center border-r border-white/5">S{prevWeekNum}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 font-black text-white">S{selectedWeek}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5">DIF</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-emerald-900/20">S{prevWeekNum}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-emerald-900/20 font-black text-emerald-400">S{selectedWeek}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-emerald-900/20">DIF</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-rose-900/20">S{prevWeekNum}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-rose-900/20 font-black text-rose-400">S{selectedWeek}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-rose-900/20">DIF</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-blue-900/20">S{prevWeekNum}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-blue-900/20 font-black text-blue-400">S{selectedWeek}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-blue-900/20">DIF</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {unes.map(une => (
-                <TableRow key={une.id} une={une} curr={getRowData(une.id, selectedWeek, selectedYear)} prev={getRowData(une.id, prevWeekNum, prevYearNum)} status={{ bg: getStatusColor(getRowData(une.id, selectedWeek, selectedYear).porcentajeVacantes).split(' ')[1] }} handleInlineChange={handleInlineChange} userRole={userRole} />
+                <TableRow key={une.id} une={une} curr={getRowData(une.id, selectedWeek, selectedYear)} prev={getRowData(une.id, prevWeekNum, prevYearNum)} status={{ bg: getStatusColor(getRowData(une.id, selectedWeek, selectedYear).porcentajeVacantes).split(' ')[1] }} handleInlineChange={handleInlineChange} userRole={userRole} prevWeekNum={prevWeekNum} viewMode={viewMode} />
               ))}
             </tbody>
-            <tfoot className="bg-slate-900 text-white font-black text-center sticky bottom-0 z-30">
+            <tfoot className="bg-slate-900 text-white font-black text-center sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.2)] text-lg md:text-xl">
               <tr className="border-t border-white/20">
-                <td className="sticky left-0 z-40 px-6 py-5 bg-slate-800 text-left uppercase text-blue-400 text-[12px] tracking-tight border-r border-white/5">TOTAL REGIONAL</td>
-                <td className="px-1 text-slate-500 font-bold">S{prevWeekNum}</td>
-                <td className="px-1 text-xl text-blue-400">{formatNumber(summary.currEdo)}</td>
-                <td className="px-1 text-slate-400">{formatNumber(summary.currEdo - summary.prevEdo)}</td>
-                <td className="px-1 text-slate-500 font-bold">S{prevWeekNum}</td>
-                <td className="px-1 text-xl text-emerald-400">{formatNumber(summary.currAltas)}</td>
-                <td className="px-1 text-slate-400">{formatNumber(summary.currAltas - summary.prevAltas)}</td>
-                <td className="px-1 text-slate-500 font-bold">S{prevWeekNum}</td>
-                <td className="px-1 text-xl text-rose-400">{formatNumber(summary.currBajas)}</td>
-                <td className="px-1 text-slate-400">{formatNumber(summary.currBajas - summary.prevBajas)}</td>
-                <td className="px-1 text-slate-500 font-bold">S{prevWeekNum}</td>
-                <td className="px-1 text-xl text-white">{formatNumber(summary.currVac)}</td>
-                <td className="px-1 text-slate-400">{formatNumber(summary.currVac - summary.prevVac)}</td>
-                <td className="px-1 text-2xl text-blue-400">{formatNumber(summary.realesFS)}</td>
-                <td className="px-2"><span className={`px-3 py-1 rounded-lg text-xs shadow-lg ${getStatusColor(totalPerc).split(' ')[1]}`}>{totalPerc.toFixed(1)}%</span></td>
+                <td className="sticky left-0 z-40 px-3 md:px-6 py-5 bg-slate-800 text-left uppercase text-blue-400 text-[10px] md:text-[14px] tracking-tight border-r border-white/5">TOTAL REGIONAL</td>
+                <td className="px-1 text-slate-400 font-black bg-slate-800/50">{formatNumber(summary.prevEdo)}</td>
+                <td className="px-1 text-2xl md:text-3xl text-blue-400 tracking-tighter">{formatNumber(summary.currEdo)}</td>
+                <td className={`px-1 font-black ${summary.currEdo - summary.prevEdo >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {(summary.currEdo - summary.prevEdo) > 0 ? `+${formatNumber(summary.currEdo - summary.prevEdo)}` : formatNumber(summary.currEdo - summary.prevEdo)}
+                </td>
+                <td className="px-1 text-slate-400 font-black bg-slate-800/50">{formatNumber(summary.prevAltas)}</td>
+                <td className="px-1 text-2xl md:text-3xl text-emerald-400 tracking-tighter">{formatNumber(summary.currAltas)}</td>
+                <td className={`px-1 font-black ${summary.currAltas - summary.prevAltas >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {(summary.currAltas - summary.prevAltas) > 0 ? `+${formatNumber(summary.currAltas - summary.prevAltas)}` : formatNumber(summary.currAltas - summary.prevAltas)}
+                </td>
+                <td className="px-1 text-slate-400 font-black bg-slate-800/50">{formatNumber(summary.prevBajas)}</td>
+                <td className="px-1 text-2xl md:text-3xl text-rose-400 tracking-tighter">{formatNumber(summary.currBajas)}</td>
+                <td className={`px-1 font-black ${summary.currBajas - summary.prevBajas <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {(summary.currBajas - summary.prevBajas) > 0 ? `+${formatNumber(summary.currBajas - summary.prevBajas)}` : formatNumber(summary.currBajas - summary.prevBajas)}
+                </td>
+                <td className="px-1 text-slate-400 font-black bg-slate-800/50">{formatNumber(summary.prevVac)}</td>
+                <td className={`px-1 text-2xl md:text-3xl tracking-tighter ${summary.currVac <= summary.prevVac ? 'text-emerald-400' : 'text-rose-400'}`}>{formatNumber(summary.currVac)}</td>
+                <td className={`px-1 font-black ${summary.currVac - summary.prevVac <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {(summary.currVac - summary.prevVac) > 0 ? `+${formatNumber(summary.currVac - summary.prevVac)}` : formatNumber(summary.currVac - summary.prevVac)}
+                </td>
+                <td className="px-1 text-3xl md:text-4xl text-blue-400 tracking-tighter">{formatNumber(summary.realesFS)}</td>
+                <td className="px-2"><span className={`px-4 py-1 rounded-lg text-sm shadow-lg ${getStatusColor(totalPerc).split(' ')[1]}`}>{totalPerc.toFixed(1)}%</span></td>
                 <td></td>
               </tr>
             </tfoot>

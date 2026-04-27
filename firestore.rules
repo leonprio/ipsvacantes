@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- 🛡️ NUCLEAR ISOLATION FUNCTIONS ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Validador de Pertenencia: Un usuario solo accede a su propia burbuja
+    function isTableroUser() {
+      return exists(/databases/$(database)/documents/tbl_users/$(request.auth.uid));
+    }
+    
+    function isGobernanzaUser() {
+      return exists(/databases/$(database)/documents/cpx_users/$(request.auth.uid));
+    }
+    
+    function isVacantesUser() {
+      return exists(/databases/$(database)/documents/vac_users/$(request.auth.uid));
+    }
+    
+    function isActivadorUser() {
+      return exists(/databases/$(database)/documents/stx_users/$(request.auth.uid));
+    }
+
+    // --- 1. AISLAMIENTO: TABLERO (tbl_*) ---
+    match /tbl_users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isTableroUser());
+    }
+    match /tbl_dashboards/{docId} {
+      allow read, write: if isTableroUser();
+      match /items/{itemId} { allow read, write: if isTableroUser(); }
+    }
+    match /tbl_systemSettings/{id=**} { allow read, write: if isTableroUser(); }
+    match /tbl_managedClients/{id=**} { allow read, write: if isTableroUser(); }
+
+    // --- 2. AISLAMIENTO: GOBERNANZA (cpx_*) ---
+    match /cpx_users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isGobernanzaUser());
+    }
+    match /cpx_work_plans/{id=**} { allow read, write: if isGobernanzaUser(); }
+    match /cpx_indicators/{id=**} { allow read, write: if isGobernanzaUser(); }
+    match /cpx_reports/{id=**} { allow read, write: if isGobernanzaUser(); }
+
+    // --- 3. AISLAMIENTO: VACANTES (vac_*) ---
+    match /vac_users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isVacantesUser());
+    }
+    match /vac_weekly_data/{id=**} { allow read, write: if isVacantesUser(); }
+    match /vac_weekly_analysis/{id=**} { allow read, write: if isVacantesUser(); }
+    match /vac_config/{id=**} { allow read, write: if isVacantesUser(); }
+    match /vac_unes/{id=**} { allow read, write: if isVacantesUser(); }
+
+    // --- 4. AISLAMIENTO: ACTIVADOR (stx_*) ---
+    match /stx_users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isActivadorUser());
+    }
+    match /stx_dashboards/{id=**} { allow read, write: if isActivadorUser(); }
+    match /stx_history/{id=**} { allow read, write: if isActivadorUser(); }
+    match /stx_managedClients/{id=**} { allow read, write: if isActivadorUser(); }
+
+    // --- 5. COMPATIBILIDAD Y LEGACY (Bloqueo Gradual) ---
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    match /dashboards/{id=**} { allow read, write: if false; }
+    match /weekly_data/{id=**} { allow read, write: if false; }
+
+    // --- 🚨 REGLA DE CIERRE NUCLEAR 🚨 ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

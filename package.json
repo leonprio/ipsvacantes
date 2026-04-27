@@ -1,26 +1,33 @@
-
 {
   "name": "ips-analisis-estrategico",
   "private": true,
-  "version": "6.9.0",
+  "version": "11.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "prebuild": "node scripts/check-config.js",
+    "build": "npm run prebuild && tsc && vite build",
     "preview": "vite preview",
-    "firebase-deploy": "npm run build && firebase deploy"
+    "test": "vitest",
+    "deploy:safe": "npm run build && firebase deploy --only hosting:ipsvac",
+    "deploy-shield": "npm run deploy:safe"
   },
   "dependencies": {
+    "firebase": "^12.8.0",
+    "lucide-react": "^0.473.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^2.15.0",
-    "lucide-react": "^0.473.0"
+    "recharts": "^2.15.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^28.0.0",
     "typescript": "~5.6.2",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "vitest": "^4.0.18"
   }
 }

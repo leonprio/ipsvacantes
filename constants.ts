@@ -2,11 +2,11 @@
 import { Region, UNE } from './types';
 
 export const REGIONS: Region[] = [
+  // Updated 'manager' to 'editor' to match Region interface
   { id: 'R1', name: 'CENTRO', editor: 'JAIME PAZMIÑO' },
   { id: 'R2', name: 'CENTRO NORTE', editor: 'JAVIER GRIFALDO' },
   { id: 'R3', name: 'SUR', editor: 'ISRAEL GUIDO' },
   { id: 'R4', name: 'FRONTERA NORTE', editor: 'GERARDO GUTIERREZ' },
-  { id: 'R5', name: 'TSP+', editor: 'COORDINACIÓN TSP+' },
 ];
 
 export const UNES: UNE[] = [
@@ -28,8 +28,6 @@ export const UNES: UNE[] = [
   { id: 'U12', name: 'PACIFICO', regionId: 'R4' },
   { id: 'U13', name: 'NOROESTE', regionId: 'R4' },
   { id: 'U14', name: 'NORESTE', regionId: 'R4' },
-  // Region 5
-  { id: 'U15', name: 'TSP+', regionId: 'R5' },
 ];
 
 export const STATUS_THRESHOLDS = {
