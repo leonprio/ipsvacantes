@@ -42,6 +42,8 @@ const DiffCell = ({ current, prev, inverse = false }: { current: number, prev: n
 // Blindaje de fila: Solo re-renderiza si sus datos específicos cambian
 const TableRow = memo(({ une, curr, prev, status, handleInlineChange, userRole, prevWeekNum, viewMode }: any) => {
   const isPresentation = viewMode === 'presentation';
+  const hasPrevData = prev && prev.vacantesRealesFS !== undefined && prev.vacantesRealesFS !== null;
+
   return (
     <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0" title={`Datos de ${une.name}`}>
       <td className={`sticky left-0 z-10 bg-white px-3 md:px-4 py-3 md:py-2 font-black text-slate-800 border-r border-slate-50 ${isPresentation ? 'text-lg md:text-3xl py-4' : 'text-xs md:text-base'}`}>{une.name}</td>
@@ -57,22 +59,36 @@ const TableRow = memo(({ une, curr, prev, status, handleInlineChange, userRole, 
       <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.vacantesRealesFS || 0)}`}>{formatNumber(prev?.vacantesRealesFS || 0)}</td>
       <EditableCell value={curr?.vacantesIniciales || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesIniciales', v)} userRole={userRole} highlight={true} isLarge={true} />
       <DiffCell current={curr?.vacantesIniciales || 0} prev={prev?.vacantesRealesFS || 0} inverse={true} />
+
+      {/* VACANTES OPERATIVAS COMPARATIVO */}
+      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80 bg-blue-50/10" title={`Vacantes Operativas Semana Anterior (${prevWeekNum}): ${hasPrevData ? formatNumber(prev.vacantesRealesFS) : '—'}`}>
+        {hasPrevData ? formatNumber(prev.vacantesRealesFS) : '—'}
+      </td>
       <EditableCell value={curr?.vacantesRealesFS || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesRealesFS', v)} colorClass="text-blue-800" highlight={true} userRole={userRole} isLarge={true} bgColor="bg-blue-100/10" />
+      {hasPrevData ? (
+        <DiffCell current={curr?.vacantesRealesFS || 0} prev={prev.vacantesRealesFS} inverse={true} />
+      ) : (
+        <td className="px-2 py-3 text-center border-r border-slate-100 font-black tabular-nums text-xl text-slate-400">—</td>
+      )}
+
       <td className="px-1 py-2 text-center border-r border-slate-50">
         <span className={`inline-block px-3 py-1.5 rounded-lg text-xs font-black text-white shadow-sm ${status.bg}`} title={`Porcentaje de Vacantes: ${curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%`}>
           {curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%
         </span>
       </td>
-      <td className="px-4 py-2 text-[10px] text-slate-600 italic font-bold">
+      <td className="px-4 py-2 text-slate-600 font-bold min-w-[280px] max-w-[400px]">
         {userRole !== 'viewer' ? (
           <textarea
-            className={`w-full bg-transparent border-none resize-none p-1 outline-none font-bold ${isPresentation ? 'text-sm' : 'text-[10px]'}`}
-            rows={isPresentation ? 2 : 1}
+            className={`w-full bg-transparent border border-slate-200/60 focus:border-blue-400 rounded-lg p-2 outline-none font-bold text-slate-800 focus:bg-white transition-all overflow-hidden resize-none ${isPresentation ? 'text-sm' : 'text-xs'}`}
+            rows={Math.max(2, Math.ceil((curr?.comentarios || '').length / 35))}
             value={curr?.comentarios || ''}
             onChange={e => handleInlineChange(une.id, 'comentarios', e.target.value)}
+            placeholder="Observaciones..."
           />
         ) : (
-          <span className={`block p-1 whitespace-pre-wrap ${isPresentation ? 'text-sm' : 'text-[10px]'}`}>{curr?.comentarios || ''}</span>
+          <div className={`p-1 whitespace-pre-wrap break-words text-slate-800 leading-normal ${isPresentation ? 'text-sm' : 'text-xs'}`}>
+            {curr?.comentarios || '—'}
+          </div>
         )}
       </td>
     </tr>
@@ -106,6 +122,9 @@ const DashboardTable: React.FC<DashboardTableProps> = ({
 
   const getRowData = (uneId: string, week: number, year: number) => {
     const raw = allData.find(d => d.uneId === uneId && d.week === week && d.year === year);
+    if (!raw && week === prevWeekNum) {
+      return null;
+    }
     return computeEntryData(raw || { uneId, week, year, edoFza: 0, altas: 0, bajas: 0, vacantesIniciales: 0, vacantesRealesFS: 0, comentarios: '' }, nationalMetrics);
   };
 
@@ -122,16 +141,24 @@ const DashboardTable: React.FC<DashboardTableProps> = ({
   };
 
   const summary = (unes || []).reduce((acc, une) => {
-    const curr = getRowData(une.id, selectedWeek, selectedYear);
+    const curr = getRowData(une.id, selectedWeek, selectedYear) || computeEntryData({ uneId: une.id, week: selectedWeek, year: selectedYear, edoFza: 0, altas: 0, bajas: 0, vacantesIniciales: 0, vacantesRealesFS: 0 }, nationalMetrics);
     const prev = getRowData(une.id, prevWeekNum, prevYearNum);
+    const hasPrev = prev !== null && prev.vacantesRealesFS !== undefined && prev.vacantesRealesFS !== null;
+
     return {
-      currEdo: acc.currEdo + curr.edoFza, prevEdo: acc.prevEdo + prev.edoFza,
-      currAltas: acc.currAltas + curr.altas, prevAltas: acc.prevAltas + prev.altas,
-      currBajas: acc.currBajas + curr.bajas, prevBajas: acc.prevBajas + prev.bajas,
-      currVac: acc.currVac + curr.vacantesIniciales, prevVac: acc.prevVac + prev.vacantesRealesFS,
+      currEdo: acc.currEdo + curr.edoFza,
+      prevEdo: acc.prevEdo + (prev?.edoFza || 0),
+      currAltas: acc.currAltas + curr.altas,
+      prevAltas: acc.prevAltas + (prev?.altas || 0),
+      currBajas: acc.currBajas + curr.bajas,
+      prevBajas: acc.prevBajas + (prev?.bajas || 0),
+      currVac: acc.currVac + curr.vacantesIniciales,
+      prevVac: acc.prevVac + (prev?.vacantesRealesFS || 0),
       realesFS: acc.realesFS + curr.vacantesRealesFS,
+      prevRealesFS: acc.prevRealesFS + (hasPrev ? prev.vacantesRealesFS : 0),
+      hasPrevData: acc.hasPrevData || hasPrev
     };
-  }, { currEdo: 0, prevEdo: 0, currAltas: 0, prevAltas: 0, currBajas: 0, prevBajas: 0, currVac: 0, prevVac: 0, realesFS: 0 });
+  }, { currEdo: 0, prevEdo: 0, currAltas: 0, prevAltas: 0, currBajas: 0, prevBajas: 0, currVac: 0, prevVac: 0, realesFS: 0, prevRealesFS: 0, hasPrevData: false });
 
   const totalPerc = summary.currEdo > 0 ? (summary.realesFS / summary.currEdo) * 100 : 0;
 
@@ -187,17 +214,17 @@ const DashboardTable: React.FC<DashboardTableProps> = ({
 
       {isOpen && (
         <div className="overflow-x-auto relative scrollbar-hide border-t border-slate-100">
-          <table className="w-full text-left border-collapse min-w-[1200px]">
+          <table className="w-full text-left border-collapse min-w-[1350px]">
             <thead>
               <tr className="bg-slate-900 text-white text-xs md:text-sm font-black uppercase tracking-[0.2em]">
                 <th rowSpan={2} className="sticky left-0 z-20 w-[140px] md:w-[220px] px-3 md:px-6 py-4 bg-slate-800 text-left border-r border-white/5 align-middle text-[10px] md:text-sm">UNIDAD DE NEGOCIO</th>
                 <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-slate-800/50">ESTADO DE FUERZA</th>
                 <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-emerald-900/40 text-emerald-400">FLUJO DE ALTAS</th>
                 <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-rose-900/40 text-rose-400">FLUJO DE BAJAS</th>
-                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-blue-900/40 text-blue-400">VACANTES</th>
-                <th rowSpan={2} className="px-1 py-3 text-center text-blue-800 bg-blue-50/50 min-w-[110px] align-middle text-xs">VACANTES<br />OPERATIVAS</th>
+                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-slate-800/80 text-slate-300">VACANTES INICIALES</th>
+                <th colSpan={3} className="px-2 py-3 text-center border-r border-white/5 bg-blue-900/40 text-blue-400">VACANTES OPERATIVAS</th>
                 <th rowSpan={2} className="px-4 py-4 text-center align-middle text-sm">% KP</th>
-                <th rowSpan={2} className="px-5 py-4 text-left align-middle text-sm">OBSERVACIONES</th>
+                <th rowSpan={2} className="px-5 py-4 text-left align-middle text-sm min-w-[280px]">OBSERVACIONES</th>
               </tr>
               <tr className="bg-slate-800/80 text-slate-300 text-[11px] md:text-xs font-bold uppercase tracking-wider">
                 <th className="px-2 py-2 text-center border-r border-white/5">S{prevWeekNum}</th>
@@ -209,6 +236,9 @@ const DashboardTable: React.FC<DashboardTableProps> = ({
                 <th className="px-2 py-2 text-center border-r border-white/5 bg-rose-900/20">S{prevWeekNum}</th>
                 <th className="px-2 py-2 text-center border-r border-white/5 bg-rose-900/20 font-black text-rose-400">S{selectedWeek}</th>
                 <th className="px-2 py-2 text-center border-r border-white/5 bg-rose-900/20">DIF</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-slate-800/40">S{prevWeekNum}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-slate-800/40 font-black text-white">S{selectedWeek}</th>
+                <th className="px-2 py-2 text-center border-r border-white/5 bg-slate-800/40">DIF</th>
                 <th className="px-2 py-2 text-center border-r border-white/5 bg-blue-900/20">S{prevWeekNum}</th>
                 <th className="px-2 py-2 text-center border-r border-white/5 bg-blue-900/20 font-black text-blue-400">S{selectedWeek}</th>
                 <th className="px-2 py-2 text-center border-r border-white/5 bg-blue-900/20">DIF</th>
@@ -216,7 +246,7 @@ const DashboardTable: React.FC<DashboardTableProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {unes.map(une => (
-                <TableRow key={une.id} une={une} curr={getRowData(une.id, selectedWeek, selectedYear)} prev={getRowData(une.id, prevWeekNum, prevYearNum)} status={{ bg: getStatusColor(getRowData(une.id, selectedWeek, selectedYear).porcentajeVacantes).split(' ')[1] }} handleInlineChange={handleInlineChange} userRole={userRole} prevWeekNum={prevWeekNum} viewMode={viewMode} />
+                <TableRow key={une.id} une={une} curr={getRowData(une.id, selectedWeek, selectedYear)} prev={getRowData(une.id, prevWeekNum, prevYearNum)} status={{ bg: getStatusColor(getRowData(une.id, selectedWeek, selectedYear)?.porcentajeVacantes || 0).split(' ')[1] }} handleInlineChange={handleInlineChange} userRole={userRole} prevWeekNum={prevWeekNum} viewMode={viewMode} />
               ))}
             </tbody>
             <tfoot className="bg-slate-900 text-white font-black text-center sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.2)] text-lg md:text-xl">
@@ -242,7 +272,14 @@ const DashboardTable: React.FC<DashboardTableProps> = ({
                 <td className={`px-1 font-black ${summary.currVac - summary.prevVac <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {(summary.currVac - summary.prevVac) > 0 ? `+${formatNumber(summary.currVac - summary.prevVac)}` : formatNumber(summary.currVac - summary.prevVac)}
                 </td>
+                {/* VACANTES OPERATIVAS TOTAL REGIONAL */}
+                <td className="px-1 text-slate-400 font-black bg-slate-800/50">{summary.hasPrevData ? formatNumber(summary.prevRealesFS) : '—'}</td>
                 <td className="px-1 text-3xl md:text-4xl text-blue-400 tracking-tighter">{formatNumber(summary.realesFS)}</td>
+                <td className={`px-1 font-black ${!summary.hasPrevData ? 'text-slate-400' : (summary.realesFS - summary.prevRealesFS <= 0 ? 'text-emerald-500' : 'text-rose-500')}`}>
+                  {summary.hasPrevData ? (
+                    (summary.realesFS - summary.prevRealesFS) > 0 ? `+${formatNumber(summary.realesFS - summary.prevRealesFS)}` : formatNumber(summary.realesFS - summary.prevRealesFS)
+                  ) : '—'}
+                </td>
                 <td className="px-2"><span className={`px-4 py-1 rounded-lg text-sm shadow-lg ${getStatusColor(totalPerc).split(' ')[1]}`}>{totalPerc.toFixed(1)}%</span></td>
                 <td></td>
               </tr>
