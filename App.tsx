@@ -20,7 +20,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as Fireba
 import { doc, onSnapshot, setDoc, getDoc, collection, query, getDocs, deleteDoc, where, writeBatch } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 
-const APP_VERSION = 'v11.1.0-VACIPS-CLOSURE-SHIELD';
+const APP_VERSION = 'v11.1.2-DYNAMIC-GOALS-PRESENTATION-RESTORE';
 
 const getCurrentISOWeek = () => {
   const d = new Date();
