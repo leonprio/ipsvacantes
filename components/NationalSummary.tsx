@@ -63,7 +63,8 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
   }), { altas: 0, bajas: 0, vacantes: 0, edoFza: 0, vacantesIniciales: 0 });
 
   const totals = aggregate(data);
-  const prevTotals = aggregate(prevData);
+  const hasPrevData = prevData && prevData.length > 0;
+  const prevTotals = hasPrevData ? aggregate(prevData) : null;
 
   const kpiReal = totals.edoFza > 0 ? (totals.vacantes / totals.edoFza) * 100 : 0;
   const metas = metrics.metas;
@@ -93,7 +94,7 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
 
   // Total c/ Apoyos
   const totalConApoyos = nationalData?.edoFza || 0;
-  const prevConApoyos = prevNationalData?.edoFza || 0;
+  const prevConApoyos = prevNationalData?.edoFza;
 
   const handleEditTotalApoyos = () => {
     if (!onUpdate) return;
@@ -104,12 +105,20 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
   };
 
   /** Badge de diferencia con semana anterior */
-  const Diff = ({ curr, prev, inv = false }: { curr: number; prev: number; inv?: boolean }) => {
+  const Diff = ({ curr, prev, inv = false }: { curr: number; prev?: number | null; inv?: boolean }) => {
+    if (prev === undefined || prev === null || isNaN(prev)) {
+      return (
+        <span className="text-[12px] md:text-[14px] font-black tabular-nums font-mono-data text-slate-500">
+          S{prevWeek} —
+        </span>
+      );
+    }
     const diff = curr - prev;
     const isGood = inv ? diff <= 0 : diff >= 0;
+    const diffText = diff > 0 ? `+${fmtMiles(diff)}` : fmtMiles(diff);
     return (
       <span className={`text-[12px] md:text-[14px] font-black tabular-nums font-mono-data ${isGood ? 'text-emerald-400' : 'text-rose-400'} ${!isGood ? 'ips-critical-blink' : ''}`}>
-        S{prevWeek} {fmtMiles(prev)} <span className="text-[10px] md:text-[12px] opacity-80">{diff > 0 ? `+${fmtMiles(diff)}` : fmtMiles(diff)}</span>
+        S{prevWeek} {fmtMiles(prev)} <span className="text-[10px] md:text-[12px] opacity-80">{diffText}</span>
       </span>
     );
   };
@@ -126,10 +135,10 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
           <div className="flex justify-between items-start">
             <h4 className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Estado de Fuerza</h4>
           </div>
-          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${totals.edoFza >= prevTotals.edoFza ? 'text-white' : 'text-orange-400'}`}>
+          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${prevTotals && totals.edoFza < prevTotals.edoFza ? 'text-orange-400' : 'text-white'}`}>
             {fmtMiles(animEdoFza)}
           </span>
-          <Diff curr={totals.edoFza} prev={prevTotals.edoFza} />
+          <Diff curr={totals.edoFza} prev={prevTotals?.edoFza} />
 
           {/* Total c/ Apoyos */}
           <div className={`border-t border-blue-900/30 mt-2 pt-2 relative ${isEditable ? 'cursor-pointer' : ''}`} onClick={isEditable ? handleEditTotalApoyos : undefined}>
@@ -159,7 +168,7 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
           <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(altasFulfillment).text}`}>
             {fmtMiles(animAltas)}
           </span>
-          <Diff curr={totals.altas} prev={prevTotals.altas} />
+          <Diff curr={totals.altas} prev={prevTotals?.altas} />
         </div>
 
         {/* 3) Bajas Nacional */}
@@ -172,7 +181,7 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
           <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(bajasFulfillment).text}`}>
             {fmtMiles(animBajas)}
           </span>
-          <Diff curr={totals.bajas} prev={prevTotals.bajas} inv={true} />
+          <Diff curr={totals.bajas} prev={prevTotals?.bajas} inv={true} />
         </div>
 
         {/* 4) Vacantes Críticas */}
@@ -185,22 +194,19 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
           <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(vacFulfillment).text}`}>
             {fmtMiles(animVacCrit)}
           </span>
-          <Diff curr={totals.vacantesIniciales} prev={prevTotals.vacantes} inv={true} />
+          <Diff curr={totals.vacantesIniciales} prev={prevTotals?.vacantesIniciales} inv={true} />
         </div>
 
         {/* 5) Vacantes Operativas */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
             <h4 className="text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Operativas</h4>
-            <span className={`text-[11px] md:text-[13px] font-black font-mono-data ${(totals.vacantes - prevTotals.vacantes) <= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {(totals.vacantes - prevTotals.vacantes) > 0 ? `+${fmtMiles(totals.vacantes - prevTotals.vacantes)}` : fmtMiles(totals.vacantes - prevTotals.vacantes)}
-            </span>
           </div>
           <span className="text-[9px] font-black text-slate-600 uppercase font-mono-data block mb-1">META: {fmtMiles(metas.vacantes)}</span>
           <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(fulfillmentKPI).text}`}>
             {fmtMiles(animVacOps)}
           </span>
-          <Diff curr={totals.vacantes} prev={prevTotals.vacantes} inv={true} />
+          <Diff curr={totals.vacantes} prev={prevTotals?.vacantes} inv={true} />
         </div>
 
         {/* 6) SEMÁFORO % Vacantes — Prominente */}

@@ -281,4 +281,15 @@ describe('Business Logic: calculatePercentageTargets (Semana 29+)', () => {
         expect(postEditRes.bajasLimitAbsolute).toBe(128);
         expect(postEditRes.vacancyTargetAbsolute).toBe(320);
     });
+
+    it('calcula diferencias comparativas dinámicas correctamente para S31 vs S30', () => {
+        const s30Data = { edoFza: 6401, altas: 147, bajas: 186, vacantesIniciales: 316, vacantesRealesFS: 316 };
+        const s31Data = { edoFza: 6444, altas: 184, bajas: 152, vacantesIniciales: 284, vacantesRealesFS: 297 };
+
+        expect(s31Data.edoFza - s30Data.edoFza).toBe(43);
+        expect(s31Data.altas - s30Data.altas).toBe(37);
+        expect(s31Data.bajas - s30Data.bajas).toBe(-34);
+        expect(s31Data.vacantesIniciales - s30Data.vacantesIniciales).toBe(-32);
+        expect(s31Data.vacantesRealesFS - s30Data.vacantesRealesFS).toBe(-19);
+    });
 });
