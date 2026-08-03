@@ -1,0 +1,19 @@
+#!/bin/bash
+# Pre-push hook de verificación de Release Guard (IPS Vacantes)
+
+echo "🛡️  [PRE-PUSH HOOK]: Verificando guard approval..."
+node scripts/verify-vacantes-guard-pass.mjs
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ [PUSH BLOQUEADO]: El HEAD actual no cuenta con guard PASS en .git/vacantes-release-guard.json."
+  echo "Para desbloquear, ejecute:"
+  echo "  npm run guard:release"
+  echo "Si modificó superficies protegidas, adjunte la evidencia visual:"
+  echo "  npm run guard:release -- --evidence docs/validation/<archivo>.md"
+  echo ""
+  exit 1
+fi
+
+echo "✅ [PRE-PUSH HOOK]: Push autorizado."
+exit 0
