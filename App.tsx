@@ -744,7 +744,7 @@ const App: React.FC = () => {
 
           {/* ─── ANÁLISIS SEMANAL VIEW ─── */}
           {activeView === 'analisis' && (
-            <AnalisisListView />
+            <AnalisisListView entries={entries} metrics={activeMetrics} />
           )}
 
           {/* ─── CONFIG VIEW ─── */}

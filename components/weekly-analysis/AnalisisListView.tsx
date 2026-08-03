@@ -1,13 +1,19 @@
 
 import React, { useState } from 'react';
 import { useWeeklyAnalysis } from '../../hooks/useWeeklyAnalysis';
-import { WeeklyAnalysis } from '../../types';
+import { WeeklyAnalysis, WeeklyData, NationalMetrics, MethodologySnapshot } from '../../types';
+import { calculatePercentageTargets } from '../../utils/calculations';
 import ReportViewerModal from './ReportViewerModal';
 
+interface AnalisisListViewProps {
+    entries?: WeeklyData[];
+    metrics?: NationalMetrics;
+}
+
 /**
- * Vista de Análisis Semanal con funcionalidad de visualización.
+ * Vista de Análisis Semanal con funcionalidad de visualización y snapshot inmutable.
  */
-const AnalisisListView: React.FC = () => {
+const AnalisisListView: React.FC<AnalisisListViewProps> = ({ entries = [], metrics }) => {
     const { analyses, isLoading, addAnalysis, deleteAnalysis } = useWeeklyAnalysis();
     const [showPasteForm, setShowPasteForm] = useState(false);
     const [pasteCode, setPasteCode] = useState('');
@@ -38,25 +44,46 @@ const AnalisisListView: React.FC = () => {
             return;
         }
         const reportId = `ANALYSIS_${newYear}_W${newSemana}`;
+
+        // Calcular targets inmutables para el snapshot si la metodología es porcentual o configurada
+        const targets = metrics ? calculatePercentageTargets(newSemana, newYear, entries, metrics, analyses) : null;
+        const methodologySnapshot: MethodologySnapshot | undefined = targets && targets.isPercentage ? {
+            isPercentage: true,
+            altasTargetAbsolute: targets.altasTargetAbsolute,
+            bajasLimitAbsolute: targets.bajasLimitAbsolute,
+            vacancyTargetAbsolute: targets.vacancyTargetAbsolute,
+            vacantesTargetAbsolute: targets.vacantesTargetAbsolute,
+            baseWorkforce: targets.baseWorkforce,
+            baseWeek: targets.baseWeek,
+            baseYear: targets.baseYear,
+            altasTargetPercentage: targets.altasTargetPercentage,
+            bajasLimitPercentage: targets.bajasLimitPercentage,
+            isConfigured: targets.isConfigured,
+            isProvisional: false,
+            methodology: targets.methodology,
+            calculatedAt: new Date().toISOString()
+        } : undefined;
+
         const result = await addAnalysis({
             id: reportId,
             semana: newSemana,
             año: newYear,
             fechaCierre: new Date().toISOString().split('T')[0],
             autor: pasteAutor.trim() || 'ADMIN',
-            estadoFuerza: { elementosActivos: 0, metaEsperada: 0, diferencia: 0, descripcion: '' },
+            estadoFuerza: { elementosActivos: 0, metaEsperada: targets?.baseWorkforce || 0, diferencia: 0, descripcion: '' },
             termometro: {
-                altasNacionales: { valorReal: 0, meta: 0, porcentaje: 0, comentario: '' },
-                bajasNacionales: { valorReal: 0, meta: 0, porcentaje: 0, comentario: '' },
-                vacantesOperativas: { valorReal: 0, meta: 0, porcentaje: 0, comentario: '' },
+                altasNacionales: { valorReal: 0, meta: targets?.altasTargetAbsolute || 0, porcentaje: 0, comentario: '' },
+                bajasNacionales: { valorReal: 0, meta: targets?.bajasLimitAbsolute || 0, porcentaje: 0, comentario: '' },
+                vacantesOperativas: { valorReal: 0, meta: targets?.vacancyTargetAbsolute || 0, porcentaje: 0, comentario: '' },
             },
-            vacantesCriticas: { valorReal: 0, limite: 0, diferencia: 0, comentario: '' },
+            vacantesCriticas: { valorReal: 0, limite: targets?.vacancyTargetAbsolute || 0, diferencia: 0, comentario: '' },
             semaforoVacantes: { porcentajeActual: 0, status: 'verde', meta: 5 },
             analisisEjecutivo: pasteCode.trim(),
             alertas: [],
             recomendaciones: [],
             creadoEn: new Date().toISOString(),
             actualizadoEn: new Date().toISOString(),
+            methodologySnapshot
         });
         if (result.success) {
             setShowPasteForm(false);

@@ -220,4 +220,65 @@ describe('Business Logic: calculatePercentageTargets (Semana 29+)', () => {
         expect(res.bajasLimitAbsolute).toBe(127);
         expect(res.vacancyTargetAbsolute).toBe(319);
     });
+
+    it('simula persistencia S31 (6401 -> 193/128/320) y confirma que cambios posteriores en capturas no alteran el snapshot', () => {
+        // 1. Calcular targets iniciales para S31 con base 6401
+        const targetsS31 = calculatePercentageTargets(31, 2026, allEntries, mockMetrics);
+        expect(targetsS31.baseWorkforce).toBe(6401);
+        expect(targetsS31.altasTargetAbsolute).toBe(193);
+        expect(targetsS31.bajasLimitAbsolute).toBe(128);
+        expect(targetsS31.vacancyTargetAbsolute).toBe(320);
+
+        // 2. Simular payload de informe creado
+        const simulatedStoredReport = {
+            id: 'ANALYSIS_2026_W31',
+            semana: 31,
+            año: 2026,
+            fechaCierre: '2026-08-03',
+            autor: 'ADMIN',
+            analisisEjecutivo: '<p>Reporte S31</p>',
+            methodologySnapshot: {
+                isPercentage: true,
+                altasTargetAbsolute: targetsS31.altasTargetAbsolute,
+                bajasLimitAbsolute: targetsS31.bajasLimitAbsolute,
+                vacancyTargetAbsolute: targetsS31.vacancyTargetAbsolute,
+                baseWorkforce: targetsS31.baseWorkforce,
+                baseWeek: targetsS31.baseWeek,
+                baseYear: targetsS31.baseYear,
+                altasTargetPercentage: targetsS31.altasTargetPercentage,
+                bajasLimitPercentage: targetsS31.bajasLimitPercentage,
+                isConfigured: targetsS31.isConfigured,
+                isProvisional: false,
+                methodology: targetsS31.methodology,
+                calculatedAt: new Date().toISOString()
+            }
+        };
+
+        // 3. Simular alteración posterior de las capturas de S30 (ej. sube de 6401 a 9000)
+        const mutatedEntries: WeeklyData[] = [
+            ...allEntries.filter(e => e.week !== 30),
+            { uneId: 'UNE_MUTATED', week: 30, year: 2026, edoFza: 9000, altas: 0, bajas: 0, vacantesIniciales: 0, vacantesRealesFS: 0 }
+        ];
+
+        // 4. Verificar que calculatePercentageTargets respeta el snapshot frozen (193/128/320) y no recalcula sobre 9000
+        const frozenRes = calculatePercentageTargets(31, 2026, mutatedEntries, mockMetrics, [simulatedStoredReport]);
+        expect(frozenRes.isProvisional).toBe(false);
+        expect(frozenRes.baseWorkforce).toBe(6401);
+        expect(frozenRes.altasTargetAbsolute).toBe(193);
+        expect(frozenRes.bajasLimitAbsolute).toBe(128);
+        expect(frozenRes.vacancyTargetAbsolute).toBe(320);
+
+        // 5. Simular edición del informe (p. ej. cambio de texto o autor) conservando methodologySnapshot
+        const editedReport = {
+            ...simulatedStoredReport,
+            autor: 'León Prior (Editado)',
+            analisisEjecutivo: '<p>Reporte S31 Editado</p>'
+        };
+
+        const postEditRes = calculatePercentageTargets(31, 2026, mutatedEntries, mockMetrics, [editedReport]);
+        expect(postEditRes.isProvisional).toBe(false);
+        expect(postEditRes.altasTargetAbsolute).toBe(193);
+        expect(postEditRes.bajasLimitAbsolute).toBe(128);
+        expect(postEditRes.vacancyTargetAbsolute).toBe(320);
+    });
 });
