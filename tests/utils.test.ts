@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-import { computeEntryData, formatNumber } from '../utils/calculations';
+import { computeEntryData, formatNumber, calculatePercentageTargets } from '../utils/calculations';
 import { verifyAppIntegrity, validateCollectionName, assertIpsNamespace, SHIELD_CONFIG } from '../utils/shield';
 import { WeeklyData, NationalMetrics } from '../types';
 
@@ -73,15 +73,15 @@ describe('Shield v3.0: assertIpsNamespace', () => {
 
 describe('Shield v3.0: SHIELD_CONFIG constants', () => {
     it('tiene la versión correcta', () => {
-        expect(SHIELD_CONFIG.VERSION).toBe('v7.8.0-PLATINUM-SHIELD-RECOVERED');
+        expect(SHIELD_CONFIG.VERSION).toBe('v9.0.0-NUCLEAR-ISOLATION-VAC');
     });
 
     it('tiene el namespace correcto', () => {
         expect(SHIELD_CONFIG.CORE_NAMESPACE).toBe('vac_');
     });
 
-    it('tiene exactamente 5 colecciones permitidas', () => {
-        expect(SHIELD_CONFIG.ALLOWED_COLLECTIONS).toHaveLength(5);
+    it('tiene exactamente 6 colecciones permitidas', () => {
+        expect(SHIELD_CONFIG.ALLOWED_COLLECTIONS).toHaveLength(6);
     });
 });
 
@@ -138,5 +138,86 @@ describe('Business Logic: computeEntryData', () => {
         const greenEntry = { ...mockEntry, vacantesRealesFS: 4 };
         const greenResult = computeEntryData(greenEntry, mockMetrics);
         expect(greenResult.status).toBe('green');
+    });
+});
+
+describe('Business Logic: calculatePercentageTargets (Semana 29+)', () => {
+    const mockMetrics: NationalMetrics = {
+        metas: { altas: 200, bajas: 100, vacantes: 300, porcentaje: 5.0, edoFza: 5500 },
+        thresholds: { green: 90, yellow: 80 },
+        globalPeriod: { week: 29, year: 2026, syncEnabled: false },
+        altasTargetPercentage: 3,
+        bajasLimitPercentage: 2
+    };
+
+    // S28 Entries: 6384 total
+    const s28Entries: WeeklyData[] = [
+        { uneId: 'UNE_01', week: 28, year: 2026, edoFza: 3000, altas: 50, bajas: 30, vacantesIniciales: 100, vacantesRealesFS: 90, comentarios: '' },
+        { uneId: 'UNE_02', week: 28, year: 2026, edoFza: 3384, altas: 50, bajas: 30, vacantesIniciales: 100, vacantesRealesFS: 90, comentarios: '' },
+        { uneId: 'NATIONAL_DATA', week: 28, year: 2026, edoFza: 9999, altas: 0, bajas: 0, vacantesIniciales: 0, vacantesRealesFS: 0, comentarios: 'Ignorado' }
+    ];
+
+    // S30 Entries: 6401 total
+    const s30Entries: WeeklyData[] = [
+        { uneId: 'UNE_01', week: 30, year: 2026, edoFza: 3400, altas: 50, bajas: 30, vacantesIniciales: 100, vacantesRealesFS: 90, comentarios: '' },
+        { uneId: 'UNE_02', week: 30, year: 2026, edoFza: 3001, altas: 50, bajas: 30, vacantesIniciales: 100, vacantesRealesFS: 90, comentarios: '' }
+    ];
+
+    const allEntries = [...s28Entries, ...s30Entries];
+
+    it('S28 conserva metas fijas históricas (isPercentage = false)', () => {
+        const res = calculatePercentageTargets(28, 2026, allEntries, mockMetrics);
+        expect(res.isPercentage).toBe(false);
+        expect(res.altasTargetAbsolute).toBe(200);
+        expect(res.bajasLimitAbsolute).toBe(100);
+        expect(res.vacancyTargetAbsolute).toBe(300);
+    });
+
+    it('S29 calcula metas dinámicas certificadas (Base S28 6384 -> 192 / 127 / 319)', () => {
+        const res = calculatePercentageTargets(29, 2026, allEntries, mockMetrics);
+        expect(res.isPercentage).toBe(true);
+        expect(res.baseWorkforce).toBe(6384);
+        expect(res.altasTargetAbsolute).toBe(192); // Math.ceil(6384 * 3 / 100) = 192
+        expect(res.bajasLimitAbsolute).toBe(127); // Math.floor(6384 * 2 / 100) = 127
+        expect(res.vacancyTargetAbsolute).toBe(319); // Math.floor(6384 * 5 / 100) = 319
+        expect(res.isProvisional).toBe(true);
+    });
+
+    it('S31 calcula metas dinámicas certificadas (Base S30 6401 -> 193 / 128 / 320)', () => {
+        const res = calculatePercentageTargets(31, 2026, allEntries, mockMetrics);
+        expect(res.isPercentage).toBe(true);
+        expect(res.baseWorkforce).toBe(6401);
+        expect(res.altasTargetAbsolute).toBe(193); // Math.ceil(6401 * 3 / 100) = 193
+        expect(res.bajasLimitAbsolute).toBe(128); // Math.floor(6401 * 2 / 100) = 128
+        expect(res.vacancyTargetAbsolute).toBe(320); // Math.floor(6401 * 5 / 100) = 320
+        expect(res.isProvisional).toBe(true);
+    });
+
+    it('respeta methodologySnapshot congelado sin recalcular', () => {
+        const existingReport = [{
+            id: 'ANALYSIS_2026_W29',
+            semana: 29,
+            año: 2026,
+            methodologySnapshot: {
+                isPercentage: true,
+                altasTargetAbsolute: 192,
+                bajasLimitAbsolute: 127,
+                vacancyTargetAbsolute: 319,
+                baseWorkforce: 6384,
+                baseWeek: 28,
+                baseYear: 2026,
+                altasTargetPercentage: 3,
+                bajasLimitPercentage: 2,
+                isConfigured: true,
+                isProvisional: false,
+                methodology: 'PERCENTAGE_PREVIOUS_WEEK_WORKFORCE'
+            }
+        }];
+
+        const res = calculatePercentageTargets(29, 2026, allEntries, mockMetrics, existingReport);
+        expect(res.isProvisional).toBe(false);
+        expect(res.altasTargetAbsolute).toBe(192);
+        expect(res.bajasLimitAbsolute).toBe(127);
+        expect(res.vacancyTargetAbsolute).toBe(319);
     });
 });

@@ -70,6 +70,24 @@ export interface ComputedData extends WeeklyData {
  * @property {object} thresholds - Umbrales para cálculo de estado (verde/amarillo).
  * @property {object} globalPeriod - Sincronización de semana y año actual.
  */
+export interface MethodologySnapshot {
+  isPercentage: boolean;
+  altasTargetAbsolute: number;
+  bajasLimitAbsolute: number;
+  vacancyTargetAbsolute?: number;
+  vacantesTargetAbsolute?: number;
+  baseWorkforce: number;
+  baseWeek: number;
+  baseYear: number;
+  altasTargetPercentage: number;
+  bajasLimitPercentage: number;
+  isConfigured: boolean;
+  isProvisional: boolean;
+  methodology: string;
+  calculatedAt?: string;
+  configurationVersion?: string;
+}
+
 export interface NationalMetrics {
   metas: {
     altas: number;
@@ -87,6 +105,10 @@ export interface NationalMetrics {
     year: number;
     syncEnabled: boolean;
   };
+  altasTargetPercentage?: number;
+  bajasLimitPercentage?: number;
+  updatedAt?: string;
+  percentageCalculation?: any;
 }
 
 // ──────────────────────────────────────────────
@@ -173,6 +195,7 @@ export interface WeeklyAnalysis {
   analisisEjecutivo: string; // Texto enriquecido/markdown con el análisis cualitativo
   alertas: DynamicListItem[]; // Lista de puntos de atención urgente
   recomendaciones: DynamicListItem[]; // Lista de acciones estratégicas sugeridas
+  methodologySnapshot?: MethodologySnapshot;
 }
 
 /**
