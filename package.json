@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "deploy:safe": "npm run build && firebase deploy --only hosting:ipsvac",
-    "deploy-shield": "npm run deploy:safe"
+    "deploy-shield": "npm run deploy:safe",
+    "guard:release": "node scripts/vacantes-release-guard.mjs"
   },
   "dependencies": {
     "firebase": "^12.8.0",
