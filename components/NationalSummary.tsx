@@ -112,7 +112,7 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
   const Diff = ({ curr, prev, inv = false }: { curr: number; prev?: number | null; inv?: boolean }) => {
     if (prev === undefined || prev === null || isNaN(prev)) {
       return (
-        <span className={`tabular-nums font-mono-data text-slate-500 ${isPresentation ? 'text-[13px] md:text-[15px] font-black' : 'text-[12px] md:text-[14px] font-black'}`}>
+        <span className={`tabular-nums font-mono-data text-slate-500 ${isPresentation ? 'text-[14px] md:text-[17px] font-black' : 'text-[12px] md:text-[14px] font-black'}`}>
           S{prevWeek} —
         </span>
       );
@@ -121,8 +121,8 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
     const isGood = inv ? diff <= 0 : diff >= 0;
     const diffText = diff > 0 ? `+${fmtMiles(diff)}` : fmtMiles(diff);
     return (
-      <span className={`${isPresentation ? 'text-[13px] md:text-[15px]' : 'text-[12px] md:text-[14px]'} font-black tabular-nums font-mono-data ${isGood ? 'text-emerald-400' : 'text-rose-400'} ${!isGood ? 'ips-critical-blink' : ''}`}>
-        S{prevWeek} {fmtMiles(prev)} <span className={`${isPresentation ? 'text-[11px] md:text-[13px]' : 'text-[10px] md:text-[12px]'} opacity-80`}>{diffText}</span>
+      <span className={`${isPresentation ? 'text-[14px] md:text-[17px]' : 'text-[12px] md:text-[14px]'} font-black tabular-nums font-mono-data ${isGood ? 'text-emerald-400' : 'text-rose-400'} ${!isGood ? 'ips-critical-blink' : ''}`}>
+        S{prevWeek} {fmtMiles(prev)} <span className={`${isPresentation ? 'text-[12px] md:text-[15px]' : 'text-[10px] md:text-[12px]'} opacity-90`}>{diffText}</span>
       </span>
     );
   };
@@ -144,6 +144,30 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
 
   const isEditable = userRole === 'admin' || userRole === 'editor';
 
+  const titleClass = isPresentation
+    ? "ips-kpi-title text-[11px] md:text-[14px] font-black text-slate-400 uppercase tracking-wider mb-1"
+    : "ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider mb-0.5";
+
+  const badgeClass = isPresentation
+    ? "ips-kpi-badge px-2.5 py-1 rounded-xl text-[11px] md:text-[13px] font-black text-white shadow-xl"
+    : "ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg";
+
+  const targetClass = isPresentation
+    ? "ips-kpi-target text-[11px] md:text-[13px] font-black text-blue-300 uppercase font-mono-data block mb-1"
+    : "ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5";
+
+  const targetFixedClass = isPresentation
+    ? "ips-kpi-target text-[11px] md:text-[13px] font-black text-slate-400 uppercase font-mono-data block mb-1"
+    : "ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1";
+
+  const primaryClass = isPresentation
+    ? "ips-kpi-primary text-4xl md:text-6xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none"
+    : "ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none";
+
+  const baseClass = isPresentation
+    ? "ips-kpi-base text-[10px] md:text-[12px] font-black text-slate-400 uppercase tracking-widest mt-1.5 block leading-none"
+    : "ips-kpi-base text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block leading-none";
+
   return (
     <div className="mb-4 md:mb-6">
       {/* ═══ UNA SOLA FILA: 6 columnas desktop, 3x2 tablet, scroll móvil ═══ */}
@@ -152,9 +176,9 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 1) Estado de Fuerza + Total c/Apoyos */}
         <div className="ips-metric-card ips-card-animate group">
           <div className="flex justify-between items-start">
-            <h4 className="ips-kpi-title text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Estado de Fuerza</h4>
+            <h4 className={titleClass}>Estado de Fuerza</h4>
           </div>
-          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${prevTotals && totals.edoFza < prevTotals.edoFza ? 'text-orange-400' : 'text-white'}`}>
+          <span className={`${primaryClass} ${prevTotals && totals.edoFza < prevTotals.edoFza ? 'text-orange-400' : 'text-white'}`}>
             {fmtMiles(animEdoFza)}
           </span>
           <Diff curr={totals.edoFza} prev={prevTotals?.edoFza} />
@@ -162,14 +186,14 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
           {/* Total c/ Apoyos */}
           <div className={`border-t border-blue-900/30 mt-2 pt-2 relative ${isEditable ? 'cursor-pointer' : ''}`} onClick={isEditable ? handleEditTotalApoyos : undefined}>
             <div className="flex justify-between items-center group/title">
-              <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest block">Total c/ Apoyos</span>
+              <span className={`${isPresentation ? 'text-[10px] md:text-[12px]' : 'text-[8px]'} font-black text-slate-400 uppercase tracking-widest block`}>Total c/ Apoyos</span>
               {isEditable && (
                 <svg className="w-3 h-3 text-blue-500 opacity-0 group-hover/title:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               )}
             </div>
-            <span className="text-xl md:text-3xl font-black text-blue-300 font-mono-data tabular-nums block leading-tight">{fmtMiles(totalConApoyos)}</span>
+            <span className={`${isPresentation ? 'text-3xl md:text-5xl' : 'text-xl md:text-3xl'} font-black text-blue-300 font-mono-data tabular-nums block leading-tight`}>{fmtMiles(totalConApoyos)}</span>
             <Diff curr={totalConApoyos} prev={prevConApoyos} />
             {isEditable && !nationalData && (
               <span className="text-[8px] font-black text-amber-500 uppercase animate-pulse mt-1 block">Captura Pendiente</span>
@@ -180,24 +204,24 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 2) Altas Nacional */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Altas Nacional</h4>
-            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(altasFulfillment).bg}`}>{altasFulfillment.toFixed(0)}%</span>
+            <h4 className={titleClass}>Altas Nacional</h4>
+            <span className={`${badgeClass} ${getStatus(altasFulfillment).bg}`}>{altasFulfillment.toFixed(0)}%</span>
           </div>
           {isPct ? (
-            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5">
+            <span className={targetClass}>
               OBJ: {calc.altasTargetPercentage}% · EQUIV. A {fmtMiles(metas.altas)}
             </span>
           ) : (
-            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">
+            <span className={targetFixedClass}>
               OBJ: {fmtMiles(metas.altas)}
             </span>
           )}
-          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(altasFulfillment).text}`}>
+          <span className={`${primaryClass} ${getStatus(altasFulfillment).text}`}>
             {fmtMiles(animAltas)}
           </span>
           <Diff curr={totals.altas} prev={prevTotals?.altas} />
           {isPct && (
-            <div className="ips-kpi-base text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block leading-none">
+            <div className={baseClass}>
               BASE: S{calc.baseWeek} = {fmtMiles(calc.baseWorkforce)} {calc.isProvisional ? '(PROV)' : '(CONG)'}
             </div>
           )}
@@ -206,24 +230,24 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 3) Bajas Nacional */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Bajas Nacional</h4>
-            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(bajasFulfillment).bg}`}>{bajasFulfillment.toFixed(0)}%</span>
+            <h4 className={titleClass}>Bajas Nacional</h4>
+            <span className={`${badgeClass} ${getStatus(bajasFulfillment).bg}`}>{bajasFulfillment.toFixed(0)}%</span>
           </div>
           {isPct ? (
-            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5">
+            <span className={targetClass}>
               LIM: {calc.bajasLimitPercentage}% · EQUIV. A {fmtMiles(metas.bajas)}
             </span>
           ) : (
-            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">
+            <span className={targetFixedClass}>
               LIM: {fmtMiles(metas.bajas)}
             </span>
           )}
-          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(bajasFulfillment).text}`}>
+          <span className={`${primaryClass} ${getStatus(bajasFulfillment).text}`}>
             {fmtMiles(animBajas)}
           </span>
           <Diff curr={totals.bajas} prev={prevTotals?.bajas} inv={true} />
           {isPct && (
-            <div className="ips-kpi-base text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block leading-none">
+            <div className={baseClass}>
               BASE: S{calc.baseWeek} = {fmtMiles(calc.baseWorkforce)} {calc.isProvisional ? '(PROV)' : '(CONG)'}
             </div>
           )}
@@ -232,11 +256,11 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 4) Vacantes Críticas */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Críticas</h4>
-            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(vacFulfillment).bg}`}>{vacFulfillment.toFixed(0)}%</span>
+            <h4 className={titleClass}>Vac. Críticas</h4>
+            <span className={`${badgeClass} ${getStatus(vacFulfillment).bg}`}>{vacFulfillment.toFixed(0)}%</span>
           </div>
-          <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">LIM: {fmtMiles(metas.vacantes)}</span>
-          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(vacFulfillment).text}`}>
+          <span className={targetFixedClass}>LIM: {fmtMiles(metas.vacantes)}</span>
+          <span className={`${primaryClass} ${getStatus(vacFulfillment).text}`}>
             {fmtMiles(animVacCrit)}
           </span>
           <Diff curr={totals.vacantesIniciales} prev={prevTotals?.vacantesIniciales} inv={true} />
@@ -245,19 +269,19 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 5) Vacantes Operativas */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Operativas</h4>
-            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${semaforoStyle.bg}`}>{fulfillmentKPI.toFixed(0)}%</span>
+            <h4 className={titleClass}>Vac. Operativas</h4>
+            <span className={`${badgeClass} ${semaforoStyle.bg}`}>{fulfillmentKPI.toFixed(0)}%</span>
           </div>
           {isPct ? (
-            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5">
+            <span className={targetClass}>
               META: {metas.porcentaje}% · EQUIV. A {fmtMiles(metas.vacantes)}
             </span>
           ) : (
-            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">
+            <span className={targetFixedClass}>
               META: {fmtMiles(metas.vacantes)}
             </span>
           )}
-          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${semaforoStyle.text}`}>
+          <span className={`${primaryClass} ${semaforoStyle.text}`}>
             {fmtMiles(animVacOps)}
           </span>
           <Diff curr={totals.vacantes} prev={prevTotals?.vacantes} inv={true} />
@@ -269,22 +293,22 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
           <div className="relative z-10 flex flex-col h-full justify-between gap-2">
             <div className="flex items-start justify-between">
               <div>
-                <h4 className="text-[10px] md:text-[13px] font-black text-blue-400 uppercase tracking-wider leading-tight">% Vacantes<br />(Semáforo)</h4>
-                <span className="text-[9px] md:text-[11px] font-black text-blue-800 uppercase font-mono-data">META: {metas.porcentaje}%</span>
+                <h4 className={`${isPresentation ? 'text-[12px] md:text-[15px]' : 'text-[10px] md:text-[13px]'} font-black text-blue-400 uppercase tracking-wider leading-tight`}>% Vacantes<br />(Semáforo)</h4>
+                <span className={`${isPresentation ? 'text-[11px] md:text-[13px]' : 'text-[9px] md:text-[11px]'} font-black text-blue-300 uppercase font-mono-data`}>META: {metas.porcentaje}%</span>
               </div>
               <div className={`w-5 h-5 md:w-8 md:h-8 rounded-full ${semaforoStyle.dotClass} shadow-xl ${semaforoStyle.glow} ips-semaforo-pulse`}></div>
             </div>
 
             <div className="flex flex-col">
-              <span className={`text-4xl md:text-6xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up ${semaforoStyle.text} leading-none`}>
+              <span className={`${isPresentation ? 'text-5xl md:text-7xl' : 'text-4xl md:text-6xl'} font-black tabular-nums tracking-tighter font-mono-data ips-count-up ${semaforoStyle.text} leading-none`}>
                 {kpiReal.toFixed(1)}%
               </span>
-              <span className={`text-[9px] md:text-[11px] font-black uppercase tracking-widest ${semaforoStyle.text} opacity-80 mt-1`}>
+              <span className={`${isPresentation ? 'text-[11px] md:text-[13px]' : 'text-[9px] md:text-[11px]'} font-black uppercase tracking-widest ${semaforoStyle.text} opacity-80 mt-1`}>
                 {semaforoStyle.label}
               </span>
             </div>
 
-            <span className={`inline-block self-end px-3 py-1 rounded-lg text-[11px] md:text-[14px] font-black text-white ${semaforoStyle.bg} shadow-lg ${semaforoStyle.glow} mt-auto`}>
+            <span className={`inline-block self-end ${isPresentation ? 'px-4 py-1.5 text-[13px] md:text-[16px]' : 'px-3 py-1 text-[11px] md:text-[14px]'} font-black text-white ${semaforoStyle.bg} shadow-lg ${semaforoStyle.glow} mt-auto rounded-lg`}>
               {fulfillmentKPI.toFixed(0)}%
             </span>
           </div>
