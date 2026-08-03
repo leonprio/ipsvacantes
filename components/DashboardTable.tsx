@@ -41,52 +41,56 @@ const DiffCell = ({ current, prev, inverse = false }: { current: number, prev: n
 
 // Blindaje de fila: Solo re-renderiza si sus datos específicos cambian
 const TableRow = memo(({ une, curr, prev, status, handleInlineChange, userRole, prevWeekNum, viewMode }: any) => {
+  const isMinimal = viewMode === 'minimal';
   const isPresentation = viewMode === 'presentation';
   const hasPrevData = prev && prev.vacantesRealesFS !== undefined && prev.vacantesRealesFS !== null;
 
+  const cellPadding = isMinimal ? 'py-1 md:py-1.5' : isPresentation ? 'py-4' : 'py-3 md:py-2';
+  const nameFontSize = isMinimal ? 'text-[11px] md:text-xs' : isPresentation ? 'text-lg md:text-3xl font-black' : 'text-xs md:text-base font-black';
+
   return (
     <tr className="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0" title={`Datos de ${une.name}`}>
-      <td className={`sticky left-0 z-10 bg-white px-3 md:px-4 py-3 md:py-2 font-black text-slate-800 border-r border-slate-50 ${isPresentation ? 'text-lg md:text-3xl py-4' : 'text-xs md:text-base'}`}>{une.name}</td>
-      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.edoFza || 0)}`}>{formatNumber(prev?.edoFza || 0)}</td>
-      <EditableCell value={curr?.edoFza || 0} onChange={(v: number) => handleInlineChange(une.id, 'edoFza', v)} userRole={userRole} highlight={true} isLarge={true} />
+      <td className={`sticky left-0 z-10 bg-white px-3 md:px-4 ${cellPadding} ${nameFontSize} text-slate-800 border-r border-slate-50`}>{une.name}</td>
+      <td className={`px-1 text-center border-r text-[18px] font-black text-slate-400/80 ${isMinimal ? 'py-1' : ''}`} title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.edoFza || 0)}`}>{formatNumber(prev?.edoFza || 0)}</td>
+      <EditableCell value={curr?.edoFza || 0} onChange={(v: number) => handleInlineChange(une.id, 'edoFza', v)} userRole={userRole} highlight={true} isLarge={!isMinimal} />
       <DiffCell current={curr?.edoFza || 0} prev={prev?.edoFza || 0} />
-      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.altas || 0)}`}>{formatNumber(prev?.altas || 0)}</td>
-      <EditableCell value={curr?.altas || 0} onChange={(v: number) => handleInlineChange(une.id, 'altas', v)} colorClass="text-emerald-600" bgColor="bg-emerald-50/20" userRole={userRole} highlight={true} isLarge={true} />
+      <td className={`px-1 text-center border-r text-[18px] font-black text-slate-400/80 ${isMinimal ? 'py-1' : ''}`} title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.altas || 0)}`}>{formatNumber(prev?.altas || 0)}</td>
+      <EditableCell value={curr?.altas || 0} onChange={(v: number) => handleInlineChange(une.id, 'altas', v)} colorClass="text-emerald-600" bgColor="bg-emerald-50/20" userRole={userRole} highlight={true} isLarge={!isMinimal} />
       <DiffCell current={curr?.altas || 0} prev={prev?.altas || 0} />
-      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.bajas || 0)}`}>{formatNumber(prev?.bajas || 0)}</td>
-      <EditableCell value={curr?.bajas || 0} onChange={(v: number) => handleInlineChange(une.id, 'bajas', v)} colorClass="text-rose-600" bgColor="bg-rose-50/20" userRole={userRole} highlight={true} isLarge={true} />
+      <td className={`px-1 text-center border-r text-[18px] font-black text-slate-400/80 ${isMinimal ? 'py-1' : ''}`} title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.bajas || 0)}`}>{formatNumber(prev?.bajas || 0)}</td>
+      <EditableCell value={curr?.bajas || 0} onChange={(v: number) => handleInlineChange(une.id, 'bajas', v)} colorClass="text-rose-600" bgColor="bg-rose-50/20" userRole={userRole} highlight={true} isLarge={!isMinimal} />
       <DiffCell current={curr?.bajas || 0} prev={prev?.bajas || 0} inverse={true} />
-      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80" title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.vacantesRealesFS || 0)}`}>{formatNumber(prev?.vacantesRealesFS || 0)}</td>
-      <EditableCell value={curr?.vacantesIniciales || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesIniciales', v)} userRole={userRole} highlight={true} isLarge={true} />
+      <td className={`px-1 text-center border-r text-[18px] font-black text-slate-400/80 ${isMinimal ? 'py-1' : ''}`} title={`Semana Anterior (${prevWeekNum}): ${formatNumber(prev?.vacantesRealesFS || 0)}`}>{formatNumber(prev?.vacantesRealesFS || 0)}</td>
+      <EditableCell value={curr?.vacantesIniciales || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesIniciales', v)} userRole={userRole} highlight={true} isLarge={!isMinimal} />
       <DiffCell current={curr?.vacantesIniciales || 0} prev={prev?.vacantesRealesFS || 0} inverse={true} />
 
       {/* VACANTES OPERATIVAS COMPARATIVO */}
-      <td className="px-1 text-center border-r text-[18px] font-black text-slate-400/80 bg-blue-50/10" title={`Vacantes Operativas Semana Anterior (${prevWeekNum}): ${hasPrevData ? formatNumber(prev.vacantesRealesFS) : '—'}`}>
+      <td className={`px-1 text-center border-r text-[18px] font-black text-slate-400/80 bg-blue-50/10 ${isMinimal ? 'py-1' : ''}`} title={`Vacantes Operativas Semana Anterior (${prevWeekNum}): ${hasPrevData ? formatNumber(prev.vacantesRealesFS) : '—'}`}>
         {hasPrevData ? formatNumber(prev.vacantesRealesFS) : '—'}
       </td>
-      <EditableCell value={curr?.vacantesRealesFS || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesRealesFS', v)} colorClass="text-blue-800" highlight={true} userRole={userRole} isLarge={true} bgColor="bg-blue-100/10" />
+      <EditableCell value={curr?.vacantesRealesFS || 0} onChange={(v: number) => handleInlineChange(une.id, 'vacantesRealesFS', v)} colorClass="text-blue-800" highlight={true} userRole={userRole} isLarge={!isMinimal} bgColor="bg-blue-100/10" />
       {hasPrevData ? (
         <DiffCell current={curr?.vacantesRealesFS || 0} prev={prev.vacantesRealesFS} inverse={true} />
       ) : (
-        <td className="px-2 py-3 text-center border-r border-slate-100 font-black tabular-nums text-xl text-slate-400">—</td>
+        <td className={`px-2 ${isMinimal ? 'py-1 text-base' : 'py-3 text-xl'} text-center border-r border-slate-100 font-black tabular-nums text-slate-400`}>—</td>
       )}
 
-      <td className="px-1 py-2 text-center border-r border-slate-50">
-        <span className={`inline-block px-3 py-1.5 rounded-lg text-xs font-black text-white shadow-sm ${status.bg}`} title={`Porcentaje de Vacantes: ${curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%`}>
+      <td className={`px-1 ${isMinimal ? 'py-1' : 'py-2'} text-center border-r border-slate-50`}>
+        <span className={`inline-block px-3 ${isMinimal ? 'py-0.5 text-[10px]' : 'py-1.5 text-xs'} rounded-lg font-black text-white shadow-sm ${status.bg}`} title={`Porcentaje de Vacantes: ${curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%`}>
           {curr?.porcentajeVacantes?.toFixed(1) || '0.0'}%
         </span>
       </td>
-      <td className="px-4 py-2 text-slate-600 font-bold min-w-[280px] max-w-[400px]">
+      <td className={`px-4 ${isMinimal ? 'py-1' : 'py-2'} text-slate-600 font-bold min-w-[280px] max-w-[400px]`}>
         {userRole !== 'viewer' ? (
           <textarea
-            className={`w-full bg-transparent border border-slate-200/60 focus:border-blue-400 rounded-lg p-2 outline-none font-bold text-slate-800 focus:bg-white transition-all overflow-hidden resize-none ${isPresentation ? 'text-sm' : 'text-xs'}`}
-            rows={Math.max(2, Math.ceil((curr?.comentarios || '').length / 35))}
+            className={`w-full bg-transparent border border-slate-200/60 focus:border-blue-400 rounded-lg p-2 outline-none font-bold text-slate-800 focus:bg-white transition-all overflow-hidden resize-none ${isMinimal ? 'text-[11px]' : isPresentation ? 'text-sm' : 'text-xs'}`}
+            rows={Math.max(isMinimal ? 1 : 2, Math.ceil((curr?.comentarios || '').length / 35))}
             value={curr?.comentarios || ''}
             onChange={e => handleInlineChange(une.id, 'comentarios', e.target.value)}
             placeholder="Observaciones..."
           />
         ) : (
-          <div className={`p-1 whitespace-pre-wrap break-words text-slate-800 leading-normal ${isPresentation ? 'text-sm' : 'text-xs'}`}>
+          <div className={`p-1 whitespace-pre-wrap break-words text-slate-800 leading-normal ${isMinimal ? 'text-[11px]' : isPresentation ? 'text-sm' : 'text-xs'}`}>
             {curr?.comentarios || '—'}
           </div>
         )}

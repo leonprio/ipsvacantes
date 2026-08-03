@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { REGIONS as INITIAL_REGIONS, UNES as INITIAL_UNES } from './constants';
 import { WeeklyData, Region, NationalMetrics, User, UNE, AppView } from './types';
-import { computeEntryData } from './utils/calculations';
+import { computeEntryData, calculatePercentageTargets } from './utils/calculations';
 import DashboardTable from './components/DashboardTable';
 import Visualizations from './components/Visualizations';
 import NationalSummary from './components/NationalSummary';
@@ -20,7 +20,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User as Fireba
 import { doc, onSnapshot, setDoc, getDoc, collection, query, getDocs, deleteDoc, where, writeBatch } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 
-const APP_VERSION = 'v11.1.0-VACIPS-CLOSURE-SHIELD';
+const APP_VERSION = 'v11.1.2-DYNAMIC-GOALS-PRESENTATION-RESTORE';
 
 const getCurrentISOWeek = () => {
   const d = new Date();
@@ -408,20 +408,60 @@ const App: React.FC = () => {
   };
 
   // Computations
+  // Metas y límites adaptativos para la semana seleccionada
+  const activeMetrics = useMemo(() => {
+    const targets = calculatePercentageTargets(
+      selectedWeek,
+      selectedYear,
+      entries || [],
+      nationalMetrics,
+      analyses || []
+    );
+
+    return {
+      ...nationalMetrics,
+      metas: {
+        ...nationalMetrics.metas,
+        altas: targets.altasTargetAbsolute,
+        bajas: targets.bajasLimitAbsolute,
+        vacantes: targets.vacancyTargetAbsolute ?? targets.vacantesTargetAbsolute ?? nationalMetrics.metas.vacantes,
+        edoFza: targets.baseWorkforce || nationalMetrics.metas.edoFza
+      },
+      percentageCalculation: targets
+    };
+  }, [selectedWeek, selectedYear, entries, nationalMetrics, analyses]);
+
   const currentComputedEntries = useMemo(() => {
     return (entries || [])
       .filter(e => e.week === selectedWeek && e.year === selectedYear && e.uneId !== 'NATIONAL_DATA')
-      .map(e => computeEntryData(e, nationalMetrics));
-  }, [entries, selectedWeek, selectedYear, nationalMetrics]);
+      .map(e => computeEntryData(e, activeMetrics));
+  }, [entries, selectedWeek, selectedYear, activeMetrics]);
 
   const prevWeekNum = selectedWeek === 1 ? 52 : selectedWeek - 1;
   const prevYearNum = selectedWeek === 1 ? selectedYear - 1 : selectedYear;
 
   const prevComputedEntries = useMemo(() => {
+    const prevTargets = calculatePercentageTargets(
+      prevWeekNum,
+      prevYearNum,
+      entries || [],
+      nationalMetrics,
+      analyses || []
+    );
+    const prevMetrics = {
+      ...nationalMetrics,
+      metas: {
+        ...nationalMetrics.metas,
+        altas: prevTargets.altasTargetAbsolute,
+        bajas: prevTargets.bajasLimitAbsolute,
+        vacantes: prevTargets.vacancyTargetAbsolute ?? prevTargets.vacantesTargetAbsolute ?? nationalMetrics.metas.vacantes,
+        edoFza: prevTargets.baseWorkforce || nationalMetrics.metas.edoFza
+      }
+    };
     return (entries || [])
       .filter(e => e.week === prevWeekNum && e.year === prevYearNum && e.uneId !== 'NATIONAL_DATA')
-      .map(e => computeEntryData(e, nationalMetrics));
-  }, [entries, prevWeekNum, prevYearNum, nationalMetrics]);
+      .map(e => computeEntryData(e, prevMetrics));
+  }, [entries, prevWeekNum, prevYearNum, nationalMetrics, analyses]);
 
   const historicalTrend = useMemo(() => {
     const weeksMap: Record<string, any> = {};
@@ -631,7 +671,7 @@ const App: React.FC = () => {
               <NationalSummary
                 data={currentComputedEntries}
                 prevData={prevComputedEntries}
-                metrics={nationalMetrics}
+                metrics={activeMetrics}
                 week={selectedWeek}
                 userRole={userRole}
                 nationalData={entries.find(e => e.uneId === 'NATIONAL_DATA' && e.week === selectedWeek && e.year === selectedYear)}
@@ -644,6 +684,7 @@ const App: React.FC = () => {
                 }}
                 hasReport={!!currentReport && canViewReports}
                 onViewReport={() => setViewingReport(currentReport)}
+                viewMode={viewMode}
               />
 
               <section className="bg-[#111827] rounded-2xl shadow-sm border border-blue-900/30 overflow-hidden">
@@ -658,7 +699,7 @@ const App: React.FC = () => {
                 </button>
                 {isChartsOpen && (
                   <div className="p-6 md:p-8 border-t border-blue-900/30 bg-[#0f172a]">
-                    <Visualizations trendData={historicalTrend} metas={nationalMetrics.metas} data={currentComputedEntries} />
+                    <Visualizations trendData={historicalTrend} metas={activeMetrics.metas} data={currentComputedEntries} />
                   </div>
                 )}
               </section>
@@ -676,7 +717,7 @@ const App: React.FC = () => {
                   allData={entries} selectedWeek={selectedWeek} selectedYear={selectedYear}
                   onUpdateData={handleUpdateData} isOpen={openRegionId === region.id}
                   onToggle={() => setOpenRegionId(openRegionId === region.id ? null : region.id)}
-                  nationalMetrics={nationalMetrics} userRole={userRole}
+                  nationalMetrics={activeMetrics} userRole={userRole}
                   onUpdateRegion={handleUpdateRegion} onEditUne={() => { }}
                   viewMode={viewMode}
                 />
@@ -694,7 +735,7 @@ const App: React.FC = () => {
                   allData={entries} selectedWeek={selectedWeek} selectedYear={selectedYear}
                   onUpdateData={handleUpdateData} isOpen={openRegionId === region.id}
                   onToggle={() => setOpenRegionId(openRegionId === region.id ? null : region.id)}
-                  nationalMetrics={nationalMetrics} userRole={userRole}
+                  nationalMetrics={activeMetrics} userRole={userRole}
                   onUpdateRegion={handleUpdateRegion} onEditUne={() => { }}
                   viewMode={viewMode}
                 />
@@ -704,7 +745,7 @@ const App: React.FC = () => {
 
           {/* ─── ANÁLISIS SEMANAL VIEW ─── */}
           {activeView === 'analisis' && (
-            <AnalisisListView />
+            <AnalisisListView entries={entries} metrics={activeMetrics} />
           )}
 
           {/* ─── CONFIG VIEW ─── */}
@@ -742,32 +783,34 @@ const App: React.FC = () => {
         </main>
 
         {/* ═══ BOTTOM NAVIGATION BAR ═══ */}
-        <nav className="ips-bottom-nav" role="navigation" aria-label="Navegación principal">
-          <div className="ips-bottom-nav-inner">
-            {[
-              { id: 'dashboard' as AppView, label: 'Dashboard', icon: NavIcons.dashboard, show: true },
-              { id: 'analisis' as AppView, label: 'Análisis', icon: NavIcons.analisis, show: canViewReports },
-              { id: 'regiones' as AppView, label: 'Regiones', icon: NavIcons.regiones, show: true },
-            ].filter(i => i.show).map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id)}
-                className={`ips-nav-item ${activeView === item.id ? 'active' : ''}`}
-                aria-label={item.label}
-                aria-current={activeView === item.id ? 'page' : undefined}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
+        {viewMode !== 'presentation' && (
+          <nav className="ips-bottom-nav" role="navigation" aria-label="Navegación principal">
+            <div className="ips-bottom-nav-inner">
+              {[
+                { id: 'dashboard' as AppView, label: 'Dashboard', icon: NavIcons.dashboard, show: true },
+                { id: 'analisis' as AppView, label: 'Análisis', icon: NavIcons.analisis, show: canViewReports },
+                { id: 'regiones' as AppView, label: 'Regiones', icon: NavIcons.regiones, show: true },
+              ].filter(i => i.show).map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveView(item.id)}
+                  className={`ips-nav-item ${activeView === item.id ? 'active' : ''}`}
+                  aria-label={item.label}
+                  aria-current={activeView === item.id ? 'page' : undefined}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
+        )}
 
         {/* ═══ MODALS & BLINDAJE FUNCIONAL (NO REMOVER PROPS DE ROL) ═══ */}
         {isConfigOpen && userRole === 'admin' && <ConfigPanel config={nationalMetrics} onSave={(c) => { saveMetrics(c); setIsConfigOpen(false); }} onClose={() => setIsConfigOpen(false)} />}
         {isUsersOpen && userRole === 'admin' && <UserManagementModal users={usersList} onSave={handleSaveUser} onDelete={handleDeleteUser} onClose={() => setIsUsersOpen(false)} />}
         {showMappingModal && <MappingModal rows={csvRows} onCancel={() => setShowMappingModal(false)} onConfirm={(ne) => { ne.forEach(n => handleUpdateData(n)); setShowMappingModal(false); }} defaultWeek={selectedWeek} defaultYear={selectedYear} />}
-        {isCaptureModalOpen && <DataEntryModal userRole={userRole} week={selectedWeek} year={selectedYear} nationalMetrics={nationalMetrics} onSave={handleUpdateData} existingEntries={entries} onClose={() => setIsCaptureModalOpen(false)} unes={unes} onCreateClient={handleCreateUne} />}
+        {isCaptureModalOpen && <DataEntryModal userRole={userRole} week={selectedWeek} year={selectedYear} nationalMetrics={activeMetrics} onSave={handleUpdateData} existingEntries={entries} onClose={() => setIsCaptureModalOpen(false)} unes={unes} onCreateClient={handleCreateUne} />}
         {viewingReport && <ReportViewerModal analysis={viewingReport} onClose={() => setViewingReport(null)} />}
       </div>
     </ShieldedLayout>
