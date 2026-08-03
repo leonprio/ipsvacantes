@@ -14,6 +14,7 @@ interface NationalSummaryProps {
   onUpdate?: (uneId: string, field: keyof WeeklyData, value: number) => void;
   onViewReport?: () => void;
   hasReport?: boolean;
+  viewMode?: 'normal' | 'minimal' | 'presentation';
 }
 
 /** Hook de animación: como un odómetro girando hasta el valor correcto */
@@ -50,8 +51,11 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
   prevNationalData,
   onUpdate,
   onViewReport,
-  hasReport
+  hasReport,
+  viewMode = 'normal'
 }) => {
+  const isPresentation = viewMode === 'presentation';
+  const isMinimal = viewMode === 'minimal';
   const prevWeek = week === 1 ? 52 : week - 1;
 
   const aggregate = (dataset: ComputedData[]) => dataset.reduce((acc, curr) => ({
@@ -108,7 +112,7 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
   const Diff = ({ curr, prev, inv = false }: { curr: number; prev?: number | null; inv?: boolean }) => {
     if (prev === undefined || prev === null || isNaN(prev)) {
       return (
-        <span className="text-[12px] md:text-[14px] font-black tabular-nums font-mono-data text-slate-500">
+        <span className={`tabular-nums font-mono-data text-slate-500 ${isPresentation ? 'text-[13px] md:text-[15px] font-black' : 'text-[12px] md:text-[14px] font-black'}`}>
           S{prevWeek} —
         </span>
       );
@@ -117,11 +121,26 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
     const isGood = inv ? diff <= 0 : diff >= 0;
     const diffText = diff > 0 ? `+${fmtMiles(diff)}` : fmtMiles(diff);
     return (
-      <span className={`text-[12px] md:text-[14px] font-black tabular-nums font-mono-data ${isGood ? 'text-emerald-400' : 'text-rose-400'} ${!isGood ? 'ips-critical-blink' : ''}`}>
-        S{prevWeek} {fmtMiles(prev)} <span className="text-[10px] md:text-[12px] opacity-80">{diffText}</span>
+      <span className={`${isPresentation ? 'text-[13px] md:text-[15px]' : 'text-[12px] md:text-[14px]'} font-black tabular-nums font-mono-data ${isGood ? 'text-emerald-400' : 'text-rose-400'} ${!isGood ? 'ips-critical-blink' : ''}`}>
+        S{prevWeek} {fmtMiles(prev)} <span className={`${isPresentation ? 'text-[11px] md:text-[13px]' : 'text-[10px] md:text-[12px]'} opacity-80`}>{diffText}</span>
       </span>
     );
   };
+
+  const calc = metrics.percentageCalculation || {
+    isPercentage: week >= 29,
+    altasTargetPercentage: metrics.altasTargetPercentage || 3,
+    altasTargetAbsolute: metas.altas,
+    bajasLimitPercentage: metrics.bajasLimitPercentage || 2,
+    bajasLimitAbsolute: metas.bajas,
+    vacancyTargetAbsolute: metas.vacantes,
+    baseWorkforce: metas.edoFza,
+    baseWeek: week === 1 ? 52 : week - 1,
+    baseYear: week === 1 ? 2025 : 2026,
+    isConfigured: true,
+    isProvisional: true
+  };
+  const isPct = calc.isPercentage;
 
   const isEditable = userRole === 'admin' || userRole === 'editor';
 
@@ -133,9 +152,9 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 1) Estado de Fuerza + Total c/Apoyos */}
         <div className="ips-metric-card ips-card-animate group">
           <div className="flex justify-between items-start">
-            <h4 className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Estado de Fuerza</h4>
+            <h4 className="ips-kpi-title text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-wider mb-0.5">Estado de Fuerza</h4>
           </div>
-          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${prevTotals && totals.edoFza < prevTotals.edoFza ? 'text-orange-400' : 'text-white'}`}>
+          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${prevTotals && totals.edoFza < prevTotals.edoFza ? 'text-orange-400' : 'text-white'}`}>
             {fmtMiles(animEdoFza)}
           </span>
           <Diff curr={totals.edoFza} prev={prevTotals?.edoFza} />
@@ -161,37 +180,63 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 2) Altas Nacional */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Altas Nacional</h4>
-            <span className={`px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(altasFulfillment).bg}`}>{altasFulfillment.toFixed(0)}%</span>
+            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Altas Nacional</h4>
+            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(altasFulfillment).bg}`}>{altasFulfillment.toFixed(0)}%</span>
           </div>
-          <span className="text-[9px] font-black text-slate-600 uppercase font-mono-data block mb-1">OBJ: {fmtMiles(metas.altas)}</span>
-          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(altasFulfillment).text}`}>
+          {isPct ? (
+            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5">
+              OBJ: {calc.altasTargetPercentage}% · EQUIV. A {fmtMiles(metas.altas)}
+            </span>
+          ) : (
+            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">
+              OBJ: {fmtMiles(metas.altas)}
+            </span>
+          )}
+          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(altasFulfillment).text}`}>
             {fmtMiles(animAltas)}
           </span>
           <Diff curr={totals.altas} prev={prevTotals?.altas} />
+          {isPct && (
+            <div className="ips-kpi-base text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block leading-none">
+              BASE: S{calc.baseWeek} = {fmtMiles(calc.baseWorkforce)} {calc.isProvisional ? '(PROV)' : '(CONG)'}
+            </div>
+          )}
         </div>
 
         {/* 3) Bajas Nacional */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Bajas Nacional</h4>
-            <span className={`px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(bajasFulfillment).bg}`}>{bajasFulfillment.toFixed(0)}%</span>
+            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Bajas Nacional</h4>
+            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(bajasFulfillment).bg}`}>{bajasFulfillment.toFixed(0)}%</span>
           </div>
-          <span className="text-[9px] font-black text-slate-600 uppercase font-mono-data block mb-1">LIM: {fmtMiles(metas.bajas)}</span>
-          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(bajasFulfillment).text}`}>
+          {isPct ? (
+            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5">
+              LIM: {calc.bajasLimitPercentage}% · EQUIV. A {fmtMiles(metas.bajas)}
+            </span>
+          ) : (
+            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">
+              LIM: {fmtMiles(metas.bajas)}
+            </span>
+          )}
+          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(bajasFulfillment).text}`}>
             {fmtMiles(animBajas)}
           </span>
           <Diff curr={totals.bajas} prev={prevTotals?.bajas} inv={true} />
+          {isPct && (
+            <div className="ips-kpi-base text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block leading-none">
+              BASE: S{calc.baseWeek} = {fmtMiles(calc.baseWorkforce)} {calc.isProvisional ? '(PROV)' : '(CONG)'}
+            </div>
+          )}
         </div>
 
         {/* 4) Vacantes Críticas */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Críticas</h4>
-            <span className={`px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(vacFulfillment).bg}`}>{vacFulfillment.toFixed(0)}%</span>
+            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Críticas</h4>
+            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${getStatus(vacFulfillment).bg}`}>{vacFulfillment.toFixed(0)}%</span>
           </div>
-          <span className="text-[9px] font-black text-slate-600 uppercase font-mono-data block mb-1">LIM: {fmtMiles(metas.vacantes)}</span>
-          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(vacFulfillment).text}`}>
+          <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">LIM: {fmtMiles(metas.vacantes)}</span>
+          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(vacFulfillment).text}`}>
             {fmtMiles(animVacCrit)}
           </span>
           <Diff curr={totals.vacantesIniciales} prev={prevTotals?.vacantesIniciales} inv={true} />
@@ -200,10 +245,19 @@ const NationalSummary: React.FC<NationalSummaryProps> = ({
         {/* 5) Vacantes Operativas */}
         <div className="ips-metric-card ips-card-animate">
           <div className="flex items-start justify-between mb-1">
-            <h4 className="text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Operativas</h4>
+            <h4 className="ips-kpi-title text-[8px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vac. Operativas</h4>
+            <span className={`ips-kpi-badge px-2 py-0.5 rounded-lg text-[9px] md:text-[11px] font-black text-white shadow-lg ${semaforoStyle.bg}`}>{fulfillmentKPI.toFixed(0)}%</span>
           </div>
-          <span className="text-[9px] font-black text-slate-600 uppercase font-mono-data block mb-1">META: {fmtMiles(metas.vacantes)}</span>
-          <span className={`text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${getStatus(fulfillmentKPI).text}`}>
+          {isPct ? (
+            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-blue-300 uppercase font-mono-data block mb-0.5">
+              META: {metas.porcentaje}% · EQUIV. A {fmtMiles(metas.vacantes)}
+            </span>
+          ) : (
+            <span className="ips-kpi-target text-[9px] md:text-[11px] font-black text-slate-600 uppercase font-mono-data block mb-1">
+              META: {fmtMiles(metas.vacantes)}
+            </span>
+          )}
+          <span className={`ips-kpi-primary text-2xl md:text-4xl font-black tabular-nums tracking-tighter font-mono-data ips-count-up leading-none ${semaforoStyle.text}`}>
             {fmtMiles(animVacOps)}
           </span>
           <Diff curr={totals.vacantes} prev={prevTotals?.vacantes} inv={true} />

@@ -684,6 +684,7 @@ const App: React.FC = () => {
                 }}
                 hasReport={!!currentReport && canViewReports}
                 onViewReport={() => setViewingReport(currentReport)}
+                viewMode={viewMode}
               />
 
               <section className="bg-[#111827] rounded-2xl shadow-sm border border-blue-900/30 overflow-hidden">
