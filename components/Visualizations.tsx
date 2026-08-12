@@ -63,7 +63,7 @@ const Visualizations: React.FC<VisualizationsProps> = ({ trendData, metas }) => 
             </h4>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">Historical Core Intelligence • 12 Semanas</p>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">Historical Core Intelligence • Historia Anual</p>
             </div>
           </div>
 
@@ -94,7 +94,8 @@ const Visualizations: React.FC<VisualizationsProps> = ({ trendData, metas }) => 
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: COLORS.TEXT, fontSize: 11, fontWeight: 900 }}
+                interval="preserveStartEnd"
+                tick={{ fill: COLORS.TEXT, fontSize: 10, fontWeight: 900 }}
                 dy={15}
               />
               <YAxis
@@ -106,11 +107,6 @@ const Visualizations: React.FC<VisualizationsProps> = ({ trendData, metas }) => 
               />
 
               <Tooltip content={<CustomTooltip />} />
-
-              {/* Metas como Líneas de Referencia Sólidas Súper Visibles */}
-              <ReferenceLine y={metas.vacantes} stroke={COLORS.VACANTES} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={0.4} />
-              <ReferenceLine y={metas.altas} stroke={COLORS.ALTAS} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={0.4} />
-              <ReferenceLine y={metas.bajas} stroke={COLORS.BAJAS} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={0.4} />
 
               {/* Metas Dinámicas Punteadas Históricas */}
               <Line

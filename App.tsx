@@ -480,22 +480,29 @@ const App: React.FC = () => {
       weeksMap[key].edoFza += (Number(e.edoFza) || 0);
     });
     return Object.values(weeksMap)
-      .filter(w => w.year < selectedYear || (w.year === selectedYear && w.week <= selectedWeek))
+      .filter(w => w.year === selectedYear && w.week <= selectedWeek)
       .sort((a, b) => (a.year * 1000 + a.week) - (b.year * 1000 + b.week))
-      .slice(-12)
       .map(w => {
-        const targets = calculatePercentageTargets(
-          w.week,
-          w.year,
-          entries || [],
-          nationalMetrics,
-          analyses || []
-        );
+        if (w.week >= 29) {
+          const targets = calculatePercentageTargets(
+            w.week,
+            w.year,
+            entries || [],
+            nationalMetrics,
+            analyses || []
+          );
+          return {
+            ...w,
+            metaAltas: targets.altasTargetAbsolute,
+            metaBajas: targets.bajasLimitAbsolute,
+            metaVacantes: targets.vacancyTargetAbsolute ?? targets.vacantesTargetAbsolute ?? nationalMetrics.metas.vacantes
+          };
+        }
         return {
           ...w,
-          metaAltas: targets.altasTargetAbsolute,
-          metaBajas: targets.bajasLimitAbsolute,
-          metaVacantes: targets.vacancyTargetAbsolute ?? targets.vacantesTargetAbsolute ?? nationalMetrics.metas.vacantes
+          metaAltas: nationalMetrics.metas.altas,
+          metaBajas: nationalMetrics.metas.bajas,
+          metaVacantes: nationalMetrics.metas.vacantes
         };
       });
   }, [entries, selectedWeek, selectedYear, nationalMetrics, analyses]);
