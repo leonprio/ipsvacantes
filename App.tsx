@@ -464,10 +464,16 @@ const App: React.FC = () => {
   }, [entries, prevWeekNum, prevYearNum, nationalMetrics, analyses]);
 
   const historicalTrend = useMemo(() => {
+    const MONTH_NAMES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
     const weeksMap: Record<string, any> = {};
     (entries || []).forEach(e => {
       const key = `${e.year}-W${e.week}`;
-      if (!weeksMap[key]) weeksMap[key] = { label: `S${e.week}`, altas: 0, bajas: 0, vacantes: 0, edoFza: 0, week: e.week, year: e.year };
+      if (!weeksMap[key]) {
+        // Estimar mes basado en ISO week (semana * 7 días desde el inicio del año)
+        const approxDate = new Date(e.year, 0, 1 + (e.week - 1) * 7);
+        const monthStr = MONTH_NAMES[approxDate.getMonth()] || '';
+        weeksMap[key] = { label: `${monthStr} S${e.week}`.trim(), altas: 0, bajas: 0, vacantes: 0, edoFza: 0, week: e.week, year: e.year };
+      }
       weeksMap[key].altas += (Number(e.altas) || 0);
       weeksMap[key].bajas += (Number(e.bajas) || 0);
       weeksMap[key].vacantes += (Number(e.vacantesRealesFS) || 0);
@@ -476,8 +482,24 @@ const App: React.FC = () => {
     return Object.values(weeksMap)
       .filter(w => w.year < selectedYear || (w.year === selectedYear && w.week <= selectedWeek))
       .sort((a, b) => (a.year * 1000 + a.week) - (b.year * 1000 + b.week))
-      .slice(-12);
-  }, [entries, selectedWeek, selectedYear]);
+      .slice(-12)
+      .map(w => {
+        const targets = calculatePercentageTargets(
+          w.week,
+          w.year,
+          entries || [],
+          nationalMetrics,
+          analyses || []
+        );
+        return {
+          ...w,
+          metaAltas: targets.altasTargetAbsolute,
+          metaBajas: targets.bajasLimitAbsolute,
+          metaVacantes: targets.vacancyTargetAbsolute ?? targets.vacantesTargetAbsolute ?? nationalMetrics.metas.vacantes
+        };
+      });
+  }, [entries, selectedWeek, selectedYear, nationalMetrics, analyses]);
+
 
   // ─── LOGIN SCREEN ───
   if (authLoading && !currentUser) {

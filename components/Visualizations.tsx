@@ -47,9 +47,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 const Visualizations: React.FC<VisualizationsProps> = ({ trendData, metas }) => {
   const processedTrend = trendData.map(t => ({
     ...t,
-    metaAltas: metas.altas,
-    metaBajas: metas.bajas,
-    metaVacantes: metas.vacantes,
+    metaAltas: t.metaAltas ?? metas.altas,
+    metaBajas: t.metaBajas ?? metas.bajas,
+    metaVacantes: t.metaVacantes ?? metas.vacantes,
   }));
 
   return (
@@ -108,9 +108,41 @@ const Visualizations: React.FC<VisualizationsProps> = ({ trendData, metas }) => 
               <Tooltip content={<CustomTooltip />} />
 
               {/* Metas como Líneas de Referencia Sólidas Súper Visibles */}
-              <ReferenceLine y={metas.vacantes} stroke={COLORS.VACANTES} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={1} />
-              <ReferenceLine y={metas.altas} stroke={COLORS.ALTAS} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={1} />
-              <ReferenceLine y={metas.bajas} stroke={COLORS.BAJAS} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={1} />
+              <ReferenceLine y={metas.vacantes} stroke={COLORS.VACANTES} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={0.4} />
+              <ReferenceLine y={metas.altas} stroke={COLORS.ALTAS} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={0.4} />
+              <ReferenceLine y={metas.bajas} stroke={COLORS.BAJAS} strokeDasharray="3 3" strokeWidth={3} strokeOpacity={0.4} />
+
+              {/* Metas Dinámicas Punteadas Históricas */}
+              <Line
+                type="monotone"
+                dataKey="metaVacantes"
+                stroke={COLORS.VACANTES}
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                name="Meta Vacantes"
+                isAnimationActive={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="metaAltas"
+                stroke={COLORS.ALTAS}
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                name="Meta Altas"
+                isAnimationActive={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="metaBajas"
+                stroke={COLORS.BAJAS}
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                name="Meta Bajas"
+                isAnimationActive={false}
+              />
 
               {/* LÍNEAS DE ALTO CONTRASTE - SIN ÁREAS SOMBREADAS (UX CLEAN) */}
               <Line
