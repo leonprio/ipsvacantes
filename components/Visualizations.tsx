@@ -87,16 +87,24 @@ const Visualizations: React.FC<VisualizationsProps> = ({ trendData, metas }) => 
         {/* Chart Container */}
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={processedTrend} margin={{ top: 20, right: 30, bottom: 20, left: 0 }}>
+            <LineChart data={processedTrend} margin={{ top: 20, right: 30, bottom: 45, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.GRID} />
 
               <XAxis
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                interval="preserveStartEnd"
-                tick={{ fill: COLORS.TEXT, fontSize: 10, fontWeight: 900 }}
-                dy={15}
+                interval={0}
+                minTickGap={0}
+                angle={-90}
+                textAnchor="end"
+                tickMargin={8}
+                height={70}
+                tick={{ fill: COLORS.TEXT, fontSize: 9, fontWeight: 900 }}
+                tickFormatter={(value) => {
+                  const match = String(value).match(/S\d+/);
+                  return match ? match[0] : String(value);
+                }}
               />
               <YAxis
                 axisLine={false}
